@@ -2,15 +2,11 @@
 
 An open-source command line interface for linting your Ethereum 2.0 validator set up, maintained by Pondron LLC.
 
-[![Build Status]][https://github.com/pondron/valid8r/actions]]
+![build status](https://github.com/actions/hello-world/workflows/Greet%20Everyone/badge.svg)
 
 ## Overview
 
 ## OS Support
 
-## Contributing
-
-Pondron welcomes contributors.
-
 If you are looking to contribute, please head to the
-[Contributing](https://github.com/pondron/valid8r/CONTRIBUTING.md) section.
+[Contributing](https://github.com/pondron/valid8r/tree/CONTRIBUTING.md) section.
