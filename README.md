@@ -14,13 +14,17 @@ changes from upstream to provide a point for integration.
 
 ## `valid8r` usage
 
+```
+--config 
+```
+
 ## Ethereum Client Support
 
 | Client         | Version |
 | -------------- | ------- |
 | geth           |         |
 | besu           |         |
-| netermind      |         |
+| nethermind     |         |
 | openethereum   |         |
 | lighthouse     |         |
 | prysm          |         |
