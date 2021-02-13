@@ -29,12 +29,20 @@ changes from upstream to provide a point for integration.
 | lighthouse     |         |
 | prysm          |         |
 | teku           |         |
-| numbus         |         |
+| nimbus         |         |
 
 ## OS Support
 
 - macOS
 - Ubuntu LTS
+
+## Tests
+
+Unit tests will be included where applicable and can be run from the directory with
+
+```
+cargo test
+```
 
 ## Contributing
 
