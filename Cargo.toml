@@ -10,3 +10,4 @@ path = "src/lib.rs"
 
 [dependencies]
 structopt = "0.3.13"
+sysinfo = "0.16.1"

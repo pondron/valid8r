@@ -1,6 +1,8 @@
 use std::error::Error;
 use structopt::StructOpt;
 
+mod sys;
+
 #[derive(StructOpt)]
 pub struct Config {
     // ethereum 1.0 client 
@@ -10,10 +12,6 @@ pub struct Config {
     // ethereum 2.0 client 
     #[structopt(short = "2", long)]
     pub eth2: String,
-
-    // optional: path to custom config file
-    // #[structopt(parse(from_os_str))]
-    // pub file: std::path::PathBuf,
 }
 
 #[derive(Debug,PartialEq)]
@@ -67,9 +65,16 @@ impl Valid8r {
 }
 
 pub fn run(valid: Valid8r) -> Result<(), Box<dyn Error>> {
-    // todo: begin concurrency and client based checks here 
-    println!("1: {:?}", valid.eth1);
-    println!("2: {:?}", valid.eth2);
+    // todo: begin concurrency and client based checks here
+    //  - system checks(i.e. os up to date, sufficient hardware)
+    //  - check process is running
+    //  - listening port checks
+    //  - check most recent block
+    //  - check time sync
+
+    //  - optional: check graphana up
+    sys::sys_req();
+    println!("placeholder use {:?}", valid);
 
     Ok(())
 }
