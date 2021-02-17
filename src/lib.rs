@@ -2,6 +2,7 @@ use std::error::Error;
 use structopt::StructOpt;
 
 mod sys;
+mod net;
 
 #[derive(StructOpt)]
 pub struct Config {
@@ -74,7 +75,10 @@ pub fn run(valid: Valid8r) -> Result<(), Box<dyn Error>> {
 
     //  - optional: check graphana up
     sys::sys_req();
-    println!("placeholder use {:?}", valid);
+    println!("placeholder use {:?}\n\n", valid);
+
+    net::net_req();
+    println!("done with net\n\n");
 
     Ok(())
 }

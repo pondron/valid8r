@@ -1,5 +1,24 @@
 use sysinfo::{ProcessExt, System, SystemExt, DiskExt};
 
+// POTENTIAL fn return Datastructure?????
+// pub enum StopLight {
+//     Good,
+//     Bad,
+//     Warning,
+// }
+
+// pub struct Rezzy {
+//     pub Response String,
+//     pub StopLight StopLight,
+// }
+
+// pub struct Sys {
+//     pub OSVer Rezzy,
+//     pub Mem Rezzy,
+//     pub Proc Rezzy,
+//     pub Disks Rezzy,
+// }
+
 pub fn sys_req() {
     let mut sys = System::new_all();
 
