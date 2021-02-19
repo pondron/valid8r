@@ -1,8 +1,8 @@
-use std::error::Error;
+use sysinfo::{NetworksExt, System, SystemExt, ProcessExt, DiskExt};
+use std::net::TcpListener;
+use std::io::{Error, ErrorKind};
+use std::error::{Error as Err};
 use structopt::StructOpt;
-
-mod sys;
-mod net;
 
 #[derive(StructOpt)]
 pub struct Config {
@@ -63,24 +63,114 @@ impl Valid8r {
 
         v
     }
-}
+    pub fn run(&self) -> Result<(), Box<dyn Err>> {
+        // todo: begin concurrency and client based checks here
+        //  - system checks(i.e. os up to date, sufficient hardware)
+        //  - check process is running
+        //  - listening port checks
+        //  - check most recent block
+        //  - check time sync
+    
+        //  - optional: check graphana up
+        self.sys_req();
+        println!("placeholder use {:?}\n\n", self);
+    
+        self.net_req();
+        println!("done with net\n\n");
+    
+        Ok(())
+    }
+    pub fn net_req(&self) {
+        let s = System::new_all();
+        for net in s.get_networks() {
+            println!("{:?}", net);
+        }
+        match self.eth1 {
+            Eth1Client::GETH => {
+                match TcpListener::bind("127.0.0.1:30303") {
+                    Ok(_) => println!("should not be able to do this"),
+                    Err(e) => {
+                        if e.kind() == ErrorKind::AddrInUse {
+                            println!("ERROR: {}", e);
+                        } else {
+                            println!("different err");
+                        }
+                    }
+                }
+                match TcpListener::bind("127.0.0.1:8545") {
+                    Ok(_) => println!("should not be able to do this"),
+                    Err(e) => {
+                        if e.kind() == ErrorKind::AddrInUse {
+                            println!("ERROR: {}", e);
+                        } else {
+                            println!("different err");
+                        }
+                    }
+                }
+            }
+            _ => println!("all eth1 on same ports"),
+        }
+    
 
-pub fn run(valid: Valid8r) -> Result<(), Box<dyn Error>> {
-    // todo: begin concurrency and client based checks here
-    //  - system checks(i.e. os up to date, sufficient hardware)
-    //  - check process is running
-    //  - listening port checks
-    //  - check most recent block
-    //  - check time sync
-
-    //  - optional: check graphana up
-    sys::sys_req();
-    println!("placeholder use {:?}\n\n", valid);
-
-    net::net_req();
-    println!("done with net\n\n");
-
-    Ok(())
+    
+    }
+    pub fn sys_req(&self) {
+        let mut sys = System::new_all();
+    
+        // check os ver
+        if sys.get_name().unwrap().eq("Ubuntu") {
+            if sys.get_os_version().unwrap().eq("20.04") {
+                println!("OS Ver OKAY: {:?}", sys.get_os_version());
+            } else {
+                println!("OS Ver NOT OKAY!!!!!")
+            }
+        }
+    
+        // check sys memory
+        let mem = sys.get_total_memory();
+        if mem > 17179869 {
+            println!("All good have {}", mem);
+        } else if mem < 17179869 && mem > 8589934 {
+            println!("Min reached {} preferred {}", mem, 17179869);
+        } else {
+            println!("BAD BAD have {} need min {}", mem, 8589934);
+        }
+    
+        // check num processors
+        let proc = sys.get_processors().len();
+        if proc > 4 {
+            println!("All good have {}", proc);
+        } else if proc < 4 && proc > 2 {
+            println!("Min reached {} preferred {}", proc, 4);
+        } else {
+            println!("BAD BAD have {} need min {}", proc, 4);
+        }
+    
+        // check disk size
+        for disk in sys.get_disks() {
+            let d = disk.get_total_space();
+            if d > 1073741824000 {
+                println!("All good {:?} have {}", disk.get_name(), d);
+                break
+            } else if d < 1073741824000 && d > 137438953472 {
+                println!("Min reached {:?} {} preferred {}", disk.get_name(), d, "1TB");
+                break
+            } else {
+                println!("BAD BAD have {:?} {} need min {}",disk.get_name(), d, "1TB");
+            }
+        }
+    
+        // To refresh all system information:
+        sys.refresh_all();
+    
+        // We show the processes and some of their information:
+        for (pid, process) in sys.get_processes() {
+            if process.name().eq("chrome") {
+                println!("[{}] {} {:?}", pid, process.name(), process.disk_usage());
+                break
+            }
+        }
+    }    
 }
 
 #[cfg(test)]
