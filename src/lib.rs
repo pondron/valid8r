@@ -94,27 +94,31 @@ impl Valid8r {
             _ => {
                 match TcpListener::bind("127.0.0.1:30303") {
                     Ok(_) => {
-                        let msg = Rezzy{ message: format!("CLIENT IS NOT LISTENING ON PORT: 30303") };
+                        let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING ON PORT: 30303", self.eth1) };
                         msg.write_red();
                     },
                     Err(e) => {
                         if e.kind() == ErrorKind::AddrInUse {
-                            println!("ERROR: {}", e);
+                            let msg = Rezzy{ message: format!("{:?} is listening on port: 30303", self.eth1) };
+                            msg.write_green();
                         } else {
-                            println!("different err");
+                            let msg = Rezzy{ message: format!("{:?} misc error when listening on 30303", e) };
+                            msg.write_yellow();
                         }
                     }
                 }
                 match TcpListener::bind("127.0.0.1:8545") {
                     Ok(_) => {
-                        let msg = Rezzy{ message: format!("CLIENT IS NOT LISTENING ON PORT: 8545") };
+                        let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING ON PORT: 8545", self.eth1) };
                         msg.write_red();
                     },
                     Err(e) => {
                         if e.kind() == ErrorKind::AddrInUse {
-                            println!("ERROR: {}", e);
+                            let msg = Rezzy{ message: format!("{:?} is listening on port: 8545", self.eth1) };
+                            msg.write_green();
                         } else {
-                            println!("different err");
+                            let msg = Rezzy{ message: format!("{:?} misc error when listening on 8545", e) };
+                            msg.write_yellow();
                         }
                     }
                 }
