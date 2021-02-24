@@ -75,7 +75,7 @@ impl Valid8r {
         //  - check time sync
     
         //  - optional: check graphana up
-        println!("Valid8r is Valid8ing your Valid8or\n");
+        println!("Valid8r is Valid8ing your Valid8r\n");
         self.sys_req();
 
         self.net_req();
@@ -91,9 +91,12 @@ impl Valid8r {
     pub fn net_req(&self) {
         println!("\nNetwork Requirements:");
         match self.eth1 {
-            Eth1Client::GETH => {
+            _ => {
                 match TcpListener::bind("127.0.0.1:30303") {
-                    Ok(_) => println!("should not be able to do this"),
+                    Ok(_) => {
+                        let msg = Rezzy{ message: format!("CLIENT IS NOT LISTENING ON PORT: 30303") };
+                        msg.write_red();
+                    },
                     Err(e) => {
                         if e.kind() == ErrorKind::AddrInUse {
                             println!("ERROR: {}", e);
@@ -103,7 +106,10 @@ impl Valid8r {
                     }
                 }
                 match TcpListener::bind("127.0.0.1:8545") {
-                    Ok(_) => println!("should not be able to do this"),
+                    Ok(_) => {
+                        let msg = Rezzy{ message: format!("CLIENT IS NOT LISTENING ON PORT: 8545") };
+                        msg.write_red();
+                    },
                     Err(e) => {
                         if e.kind() == ErrorKind::AddrInUse {
                             println!("ERROR: {}", e);
@@ -113,7 +119,6 @@ impl Valid8r {
                     }
                 }
             }
-            _ => println!("all eth1 on same ports"),
         }
     }
     pub fn eth1_req(&self) {
