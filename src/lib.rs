@@ -1,4 +1,4 @@
-use sysinfo::{NetworksExt, System, SystemExt, ProcessExt, DiskExt};
+use sysinfo::{NetworkExt, NetworksExt, System, SystemExt, ProcessExt, DiskExt};
 use std::net::TcpListener;
 use std::io::{Error, ErrorKind};
 use std::error::{Error as Err};
@@ -75,26 +75,21 @@ impl Valid8r {
         //  - check time sync
     
         //  - optional: check graphana up
-        println!("Valid8r Run for ETH1 Client ({:?}) & ETH2 Client ({:?})\n", self.eth1, self.eth2);
-        println!("System Requirements:");
+        println!("Valid8r is Valid8ing your Valid8or\n");
         self.sys_req();
 
-        println!("\nNetwork Requirements:");
+        self.net_req();
 
-        println!("\nETH1 Requirements:");
+        println!("\nETH1 Requirements: {:?}", self.eth1);
 
-        println!("\nETH2 Requirements:");
+        println!("\nETH2 Requirements: {:?}", self.eth2);
 
-        // self.net_req();
         // println!("done with net\n\n");
     
         Ok(())
     }
     pub fn net_req(&self) {
-        let s = System::new_all();
-        for net in s.get_networks() {
-            println!("{:?}", net);
-        }
+        println!("\nNetwork Requirements:");
         match self.eth1 {
             Eth1Client::GETH => {
                 match TcpListener::bind("127.0.0.1:30303") {
@@ -120,11 +115,22 @@ impl Valid8r {
             }
             _ => println!("all eth1 on same ports"),
         }
-    
-
-    
     }
+    pub fn eth1_req(&self) {
+        // To refresh all system information:
+        // sys.refresh_all();
+    
+        // // We show the processes and some of their information:
+        // for (pid, process) in sys.get_processes() {
+        //     if process.name().eq("chrome") {
+        //         println!("[{}] {} {:?}", pid, process.name(), process.disk_usage());
+        //         break
+        //     }
+        // }
+    }
+
     pub fn sys_req(&self) {
+        println!("System Requirements:");
         let mut sys = System::new_all();
     
         let os = sys.get_name().unwrap().to_lowercase();
@@ -177,36 +183,23 @@ impl Valid8r {
             msg.write_red();
         }
     
-        // // check disk size
-        // for disk in sys.get_disks() {
-        //     let d = disk.get_total_space();
-        //     if d > 1000000000000 {
-        //         let msg = format!("Disk size requirement reached: \n\t Preffered 1TB(min 128GB) => Have {:?}", disk.get_name(), d);
-        //         let r = Rezzy::new(GREEN, msg);
-        //         r.build_output();
-        //         break
-        //     } else if d < 1000000000000 && d > 128000000000 {
-        //         let msg = format!("Minimum disk size requirement reached on {:?} Current:{} Preferred:{}", disk.get_name(), d, "1TB");
-        //         let r = Rezzy::new(YELLOW, msg);
-        //         r.build_output();
-        //         break
-        //     } else {
-        //         let msg = format!("Minimum disk size requirement reached on {:?} Current:{} Preferred:{}",disk.get_name(), d, "1TB");
-        //         let r = Rezzy::new(RED, msg);
-        //         r.build_output();
-        //     }
-        // }
-    
-        // To refresh all system information:
-        // sys.refresh_all();
-    
-        // // We show the processes and some of their information:
-        // for (pid, process) in sys.get_processes() {
-        //     if process.name().eq("chrome") {
-        //         println!("[{}] {} {:?}", pid, process.name(), process.disk_usage());
-        //         break
-        //     }
-        // }
+        let mut largest_disk = 0;
+        for disk in sys.get_disks() {
+            if disk.get_total_space() > largest_disk {
+                largest_disk = disk.get_total_space();
+            }
+        }
+        // check disk size requirements
+        if largest_disk > 1000000000000 {
+            let msg = Rezzy{ message: format!("Disk size requirement reached: \n\t Preffered 1TB(min 128GB) => Have {:?}", largest_disk) };
+            msg.write_green();
+        } else if largest_disk < 1000000000000 && largest_disk > 128000000000 {
+            let msg = Rezzy{ message: format!("Disk size requirement reached: \n\t Preffered 1TB(min 128GB) => Have {:?}", largest_disk) };
+            msg.write_yellow();
+        } else {
+            let msg = Rezzy{ message: format!("Disk size requirement reached: \n\t Preffered 1TB(min 128GB) => Have {:?}", largest_disk) };
+            msg.write_red();
+        }
     }    
 }
 
