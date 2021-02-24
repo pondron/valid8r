@@ -42,10 +42,6 @@ pub struct Valid8r {
     pub eth2: Eth2Client,
 }
 
-pub const GREEN: char = '\u{2705}';
-pub const YELLOW: char = '\u{26A0}';
-pub const RED: char = '\u{274C}';
-
 impl Valid8r {
     pub fn new(cfg: Config) -> Valid8r {
         let mut v = Valid8r{ eth1: Eth1Client::NONE, eth2: Eth2Client::NONE };
@@ -79,10 +75,18 @@ impl Valid8r {
         //  - check time sync
     
         //  - optional: check graphana up
+        println!("Valid8r Run for ETH1 Client ({:?}) & ETH2 Client ({:?})\n", self.eth1, self.eth2);
+        println!("System Requirements:");
         self.sys_req();
-    
-        self.net_req();
-        println!("done with net\n\n");
+
+        println!("\nNetwork Requirements:");
+
+        println!("\nETH1 Requirements:");
+
+        println!("\nETH2 Requirements:");
+
+        // self.net_req();
+        // println!("done with net\n\n");
     
         Ok(())
     }
@@ -123,82 +127,86 @@ impl Valid8r {
     pub fn sys_req(&self) {
         let mut sys = System::new_all();
     
+        let os = sys.get_name().unwrap().to_lowercase();
         // check os ver
-        if sys.get_name().unwrap().eq("Ubuntu") {
-            if sys.get_os_version().unwrap().eq("20.04") {
-                let msg = format!("OS Ver OKAY: {:?}", sys.get_os_version());
-                let r = Rezzy::new(GREEN, msg);
-                r.build_output();
-
+        if os.eq("ubuntu") {
+            let lts = "20.04";
+            let cur = sys.get_os_version().unwrap();
+            if cur.eq(lts) {
+                let msg = Rezzy{ message: format!("OS Version up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
+                msg.write_green();
             } else {
-                let msg = format!("Please upgrade your OS");
-                let r = Rezzy::new(RED, msg);
-                r.build_output();
+                let msg = Rezzy{ message: format!("OS Version up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
+                msg.write_red();
+            }
+        } else if os.eq("darwin") {
+            let lts = "11.2.1";
+            let cur = sys.get_os_version().unwrap();
+            if cur.eq("11.2.1") {
+                let msg = Rezzy{ message: format!("OS Version up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
+                msg.write_green();
+            } else {
+                let msg = Rezzy{ message: format!("OS Version up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
+                msg.write_red();
             }
         }
     
         // check sys memory
         let mem = sys.get_total_memory();
-        if mem > 17179869 {
-            let msg = format!("Memory requirement reached: {}", mem);
-            let r = Rezzy::new(GREEN, msg);
-            r.build_output();
-        } else if mem < 17179869 && mem > 8589934 {
-            let msg = format!("Minimum memory requirement reached. Current:{} Preferred:{}", mem, 17179869);
-            let r = Rezzy::new(YELLOW, msg);
-            r.build_output();
+        if mem > 16000000 {
+            let msg = Rezzy{ message: format!("Memory requirement reached: \n\t Preferred 16GB(min 8GB) => Have {} KB", mem) };
+            msg.write_green();
+        } else if mem < 16000000 && mem > 8000000 {
+            let msg = Rezzy{ message: format!("Min Memory requirement reached: \n\t Preferred 16GB(min 8GB) => Have {} KB", mem) };
+            msg.write_yellow();
         } else {
-            let msg= format!("Memory requirement not reached! Current:{} Required:{}", mem, 8589934);
-            let r = Rezzy::new(RED, msg);
-            r.build_output();
+            let msg = Rezzy{ message: format!("Memory requirement not reached: \n\t Preferred 16GB(min 8GB) => Have {} KB", mem) };
+            msg.write_red();
         }
     
         // check num processors
         let proc = sys.get_processors().len();
         if proc > 4 {
-            let msg = format!("Processor count requirement reached: {}", proc);
-            let r = Rezzy::new(GREEN, msg);
-            r.build_output();
+            let msg = Rezzy{ message: format!("Processor count requirement reached: \n\t Preferred 4 CPU(s)(min 2) => Have {} CPU(s)", proc) };
+            msg.write_green();
         } else if proc < 4 && proc > 2 {
-            let msg = format!("Minimum processor count requirement reached. Current:{} Preferred:{}", proc, 4);
-            let r = Rezzy::new(YELLOW, msg);
-            r.build_output();
+            let msg = Rezzy{ message: format!("Processor count requirement reached: \n\t Preferred 4 CPU(s)(min 2) => Have {} CPU(s)", proc) };
+            msg.write_yellow();
         } else {
-            let msg = format!("Minimum processor count requirement failed. Current:{} Required:{}", proc, 4);
-            let r = Rezzy::new(RED, msg);
-            r.build_output();
+            let msg = Rezzy{ message: format!("Processor count requirement reached: \n\t Preferred 4 CPU(s)(min 2) => Have {} CPU(s)", proc) };
+            msg.write_red();
         }
     
-        // check disk size
-        for disk in sys.get_disks() {
-            let d = disk.get_total_space();
-            if d > 1073741824000 {
-                let msg = format!("Disk size requirement reached on {:?} Size:{}", disk.get_name(), d);
-                let r = Rezzy::new(GREEN, msg);
-                r.build_output();
-                break
-            } else if d < 1073741824000 && d > 137438953472 {
-                let msg = format!("Minimum disk size requirement reached on {:?} Current:{} Preferred:{}", disk.get_name(), d, "1TB");
-                let r = Rezzy::new(YELLOW, msg);
-                r.build_output();
-                break
-            } else {
-                let msg = format!("Minimum disk size requirement reached on {:?} Current:{} Preferred:{}",disk.get_name(), d, "1TB");
-                let r = Rezzy::new(RED, msg);
-                r.build_output();
-            }
-        }
+        // // check disk size
+        // for disk in sys.get_disks() {
+        //     let d = disk.get_total_space();
+        //     if d > 1000000000000 {
+        //         let msg = format!("Disk size requirement reached: \n\t Preffered 1TB(min 128GB) => Have {:?}", disk.get_name(), d);
+        //         let r = Rezzy::new(GREEN, msg);
+        //         r.build_output();
+        //         break
+        //     } else if d < 1000000000000 && d > 128000000000 {
+        //         let msg = format!("Minimum disk size requirement reached on {:?} Current:{} Preferred:{}", disk.get_name(), d, "1TB");
+        //         let r = Rezzy::new(YELLOW, msg);
+        //         r.build_output();
+        //         break
+        //     } else {
+        //         let msg = format!("Minimum disk size requirement reached on {:?} Current:{} Preferred:{}",disk.get_name(), d, "1TB");
+        //         let r = Rezzy::new(RED, msg);
+        //         r.build_output();
+        //     }
+        // }
     
         // To refresh all system information:
-        sys.refresh_all();
+        // sys.refresh_all();
     
-        // We show the processes and some of their information:
-        for (pid, process) in sys.get_processes() {
-            if process.name().eq("chrome") {
-                println!("[{}] {} {:?}", pid, process.name(), process.disk_usage());
-                break
-            }
-        }
+        // // We show the processes and some of their information:
+        // for (pid, process) in sys.get_processes() {
+        //     if process.name().eq("chrome") {
+        //         println!("[{}] {} {:?}", pid, process.name(), process.disk_usage());
+        //         break
+        //     }
+        // }
     }    
 }
 
