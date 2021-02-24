@@ -1,11 +1,14 @@
-use sysinfo::{NetworkExt, NetworksExt, System, SystemExt, ProcessExt, DiskExt};
+use sysinfo::{System, SystemExt, DiskExt};
 use std::net::TcpListener;
-use std::io::{Error, ErrorKind};
+use std::io::ErrorKind;
 use std::error::{Error as Err};
 use structopt::StructOpt;
+use chrono::prelude::*;
 use output::Rezzy;
+use eth1::*;
 
 mod output;
+mod eth1;
 
 #[derive(StructOpt)]
 pub struct Config {
@@ -67,20 +70,25 @@ impl Valid8r {
         v
     }
     pub fn run(&self) -> Result<(), Box<dyn Err>> {
-        // todo: begin concurrency and client based checks here
-        //  - system checks(i.e. os up to date, sufficient hardware)
-        //  - check process is running
-        //  - listening port checks
-        //  - check most recent block
-        //  - check time sync
+        // TODO: 
+        //  - remove all unwraps and provide helpful errors
     
-        //  - optional: check graphana up
         println!("Valid8r is Valid8ing your Valid8r\n");
         self.sys_req();
 
         self.net_req();
 
         println!("\nETH1 Requirements: {:?}", self.eth1);
+        // can we talk to infura
+        // are we synced w/ the latest block
+        match self.eth1 {
+            Eth1Client::GETH => geth_check(),
+            Eth1Client::BESU => besu_check(),
+            Eth1Client::NETHERMIND => nethermind_check(),
+            Eth1Client::OPENETHEREUM => open_ethereum_check(),
+            _ => println!("can't happen")
+        }
+
 
         println!("\nETH2 Requirements: {:?}", self.eth2);
 
@@ -196,7 +204,12 @@ impl Valid8r {
 
     pub fn sys_req(&self) {
         println!("System Requirements:");
-        let mut sys = System::new_all();
+        let response: ntp::packet::Packet = ntp::request("0.pool.ntp.org:123").unwrap();
+        let ntp_time = response.transmit_time;
+        let loc = Local::now();
+        println!("Time Sync - NTP {} Local {:?}", ntp_time, loc.time());
+
+        let sys = System::new_all();
     
         let os = sys.get_name().unwrap().to_lowercase();
         // check os ver
@@ -265,6 +278,8 @@ impl Valid8r {
             let msg = Rezzy{ message: format!("Disk size requirement  NOTreached: \n\t Preffered 1TB(min 128GB) => Have {:?} bytes", largest_disk) };
             msg.write_red();
         }
+
+
     }    
 }
 

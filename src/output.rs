@@ -1,4 +1,3 @@
-use std::io::{self, Write};
 use colored::*;
 
 #[derive(Debug)]
@@ -18,15 +17,4 @@ impl Rezzy {
     pub fn write_yellow(&self) {
         println!("\u{26A0} {}", self.message.yellow());
     }
-
-    pub fn build_output(&self) {
-        println!("\u{26A0} {}", self.message.yellow());
-    }
-
-    pub fn new(result: char, message: String) -> Rezzy {
-        Rezzy {
-            message: message,
-        }
-    }
-
 }
