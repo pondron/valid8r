@@ -142,7 +142,7 @@ impl Valid8r {
                 let msg = Rezzy{ message: format!("OS Version up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
                 msg.write_green();
             } else {
-                let msg = Rezzy{ message: format!("OS Version up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
+                let msg = Rezzy{ message: format!("OS Version NOT up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
                 msg.write_red();
             }
         } else if os.eq("darwin") {
@@ -152,7 +152,7 @@ impl Valid8r {
                 let msg = Rezzy{ message: format!("OS Version up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
                 msg.write_green();
             } else {
-                let msg = Rezzy{ message: format!("OS Version up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
+                let msg = Rezzy{ message: format!("OS Version NOT up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
                 msg.write_red();
             }
         }
@@ -166,7 +166,7 @@ impl Valid8r {
             let msg = Rezzy{ message: format!("Min Memory requirement reached: \n\t Preferred 16GB(min 8GB) => Have {} KB", mem) };
             msg.write_yellow();
         } else {
-            let msg = Rezzy{ message: format!("Memory requirement not reached: \n\t Preferred 16GB(min 8GB) => Have {} KB", mem) };
+            let msg = Rezzy{ message: format!("Memory requirement NOT reached: \n\t Preferred 16GB(min 8GB) => Have {} KB", mem) };
             msg.write_red();
         }
     
@@ -176,10 +176,10 @@ impl Valid8r {
             let msg = Rezzy{ message: format!("Processor count requirement reached: \n\t Preferred 4 CPU(s)(min 2) => Have {} CPU(s)", proc) };
             msg.write_green();
         } else if proc < 4 && proc > 2 {
-            let msg = Rezzy{ message: format!("Processor count requirement reached: \n\t Preferred 4 CPU(s)(min 2) => Have {} CPU(s)", proc) };
+            let msg = Rezzy{ message: format!("Min Processor count requirement reached: \n\t Preferred 4 CPU(s)(min 2) => Have {} CPU(s)", proc) };
             msg.write_yellow();
         } else {
-            let msg = Rezzy{ message: format!("Processor count requirement reached: \n\t Preferred 4 CPU(s)(min 2) => Have {} CPU(s)", proc) };
+            let msg = Rezzy{ message: format!("Processor count requirement NOT reached: \n\t Preferred 4 CPU(s)(min 2) => Have {} CPU(s)", proc) };
             msg.write_red();
         }
     
@@ -194,10 +194,10 @@ impl Valid8r {
             let msg = Rezzy{ message: format!("Disk size requirement reached: \n\t Preffered 1TB(min 128GB) => Have {:?}", largest_disk) };
             msg.write_green();
         } else if largest_disk < 1000000000000 && largest_disk > 128000000000 {
-            let msg = Rezzy{ message: format!("Disk size requirement reached: \n\t Preffered 1TB(min 128GB) => Have {:?}", largest_disk) };
+            let msg = Rezzy{ message: format!("Min Disk size requirement reached: \n\t Preffered 1TB(min 128GB) => Have {:?}", largest_disk) };
             msg.write_yellow();
         } else {
-            let msg = Rezzy{ message: format!("Disk size requirement reached: \n\t Preffered 1TB(min 128GB) => Have {:?}", largest_disk) };
+            let msg = Rezzy{ message: format!("Disk size requirement  NOTreached: \n\t Preffered 1TB(min 128GB) => Have {:?}", largest_disk) };
             msg.write_red();
         }
     }    
