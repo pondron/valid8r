@@ -122,6 +122,62 @@ impl Valid8r {
                         }
                     }
                 }
+                match TcpListener::bind("127.0.0.1:22") {
+                    Ok(_) => {
+                        // no ssh agent running here ... noice
+                    },
+                    Err(e) => {
+                        if e.kind() == ErrorKind::AddrInUse {
+                            let msg = Rezzy{ message: format!("{:?} security best practices recommend moving the standard ssh port", self.eth1) };
+                            msg.write_red();
+                        } else if e.kind()  == ErrorKind::PermissionDenied {
+                            let msg = Rezzy{ message: format!("Could not access privilaged port 22. Either run me as root user or run `sudo netstat -lpnut | grep ssh` to ensure ssh is not running on the standard port") };
+                            msg.write_yellow();
+                        } else {
+                            let msg = Rezzy{ message: format!("{:?} misc error when listening on 22", e) };
+                            msg.write_yellow();
+                        }
+                    }
+                }
+            }
+        }
+        match self.eth2 {
+            Eth2Client::LIGHTHOUSE | Eth2Client::NIMBUS | Eth2Client::TEKU => {
+                match TcpListener::bind("127.0.0.1:9000") {
+                    Ok(_) => {
+                        let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING ON PORT: 9000", self.eth2) };
+                        msg.write_red();
+                    },
+                    Err(e) => {
+                        if e.kind() == ErrorKind::AddrInUse {
+                            let msg = Rezzy{ message: format!("{:?} is listening on port: 9000", self.eth2) };
+                            msg.write_green();
+                        } else {
+                            let msg = Rezzy{ message: format!("{:?} misc error when listening on 9000", e) };
+                            msg.write_yellow();
+                        }
+                    }
+                }   
+            }
+            Eth2Client::PRYSM => {
+                match TcpListener::bind("127.0.0.1:13000") {
+                    Ok(_) => {
+                        let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING ON PORT: 13000", self.eth2) };
+                        msg.write_red();
+                    },
+                    Err(e) => {
+                        if e.kind() == ErrorKind::AddrInUse {
+                            let msg = Rezzy{ message: format!("{:?} is listening on port: 13000", self.eth2) };
+                            msg.write_green();
+                        } else {
+                            let msg = Rezzy{ message: format!("{:?} misc error when listening on 13000", e) };
+                            msg.write_yellow();
+                        }
+                    }
+                }   
+            }
+            _ => {
+                // figure out a better way of handling this,
             }
         }
     }
@@ -200,13 +256,13 @@ impl Valid8r {
         }
         // check disk size requirements
         if largest_disk > 1000000000000 {
-            let msg = Rezzy{ message: format!("Disk size requirement reached: \n\t Preffered 1TB(min 128GB) => Have {:?}", largest_disk) };
+            let msg = Rezzy{ message: format!("Disk size requirement reached: \n\t Preffered 1TB(min 128GB) => Have {:?} bytes", largest_disk) };
             msg.write_green();
         } else if largest_disk < 1000000000000 && largest_disk > 128000000000 {
-            let msg = Rezzy{ message: format!("Min Disk size requirement reached: \n\t Preffered 1TB(min 128GB) => Have {:?}", largest_disk) };
+            let msg = Rezzy{ message: format!("Min Disk size requirement reached: \n\t Preffered 1TB(min 128GB) => Have {:?} bytes", largest_disk) };
             msg.write_yellow();
         } else {
-            let msg = Rezzy{ message: format!("Disk size requirement  NOTreached: \n\t Preffered 1TB(min 128GB) => Have {:?}", largest_disk) };
+            let msg = Rezzy{ message: format!("Disk size requirement  NOTreached: \n\t Preffered 1TB(min 128GB) => Have {:?} bytes", largest_disk) };
             msg.write_red();
         }
     }    
