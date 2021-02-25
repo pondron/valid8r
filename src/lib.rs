@@ -1,11 +1,14 @@
-use sysinfo::{NetworksExt, System, SystemExt, ProcessExt, DiskExt};
+use sysinfo::{System, SystemExt, DiskExt};
 use std::net::TcpListener;
-use std::io::{Error, ErrorKind};
+use std::io::ErrorKind;
 use std::error::{Error as Err};
 use structopt::StructOpt;
+use chrono::prelude::*;
 use output::Rezzy;
+use eth1::*;
 
 mod output;
+mod eth1;
 
 #[derive(StructOpt)]
 pub struct Config {
@@ -42,10 +45,6 @@ pub struct Valid8r {
     pub eth2: Eth2Client,
 }
 
-pub const GREEN: char = '\u{2705}';
-pub const YELLOW: char = '\u{26A0}';
-pub const RED: char = '\u{274C}';
-
 impl Valid8r {
     pub fn new(cfg: Config) -> Valid8r {
         let mut v = Valid8r{ eth1: Eth1Client::NONE, eth2: Eth2Client::NONE };
@@ -71,134 +70,216 @@ impl Valid8r {
         v
     }
     pub fn run(&self) -> Result<(), Box<dyn Err>> {
-        // todo: begin concurrency and client based checks here
-        //  - system checks(i.e. os up to date, sufficient hardware)
-        //  - check process is running
-        //  - listening port checks
-        //  - check most recent block
-        //  - check time sync
+        // TODO: 
+        //  - remove all unwraps and provide helpful errors
     
-        //  - optional: check graphana up
+        println!("Valid8r is Valid8ing your Valid8r\n");
         self.sys_req();
-    
+
         self.net_req();
-        println!("done with net\n\n");
+
+        println!("\nETH1 Requirements: {:?}", self.eth1);
+        // can we talk to infura
+        // are we synced w/ the latest block
+        match self.eth1 {
+            Eth1Client::GETH => geth_check(),
+            Eth1Client::BESU => besu_check(),
+            Eth1Client::NETHERMIND => nethermind_check(),
+            Eth1Client::OPENETHEREUM => open_ethereum_check(),
+            _ => println!("can't happen")
+        }
+
+
+        println!("\nETH2 Requirements: {:?}", self.eth2);
+
+        // println!("done with net\n\n");
     
         Ok(())
     }
     pub fn net_req(&self) {
-        let s = System::new_all();
-        for net in s.get_networks() {
-            println!("{:?}", net);
-        }
+        println!("\nNetwork Requirements:");
         match self.eth1 {
-            Eth1Client::GETH => {
+            _ => {
                 match TcpListener::bind("127.0.0.1:30303") {
-                    Ok(_) => println!("should not be able to do this"),
+                    Ok(_) => {
+                        let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING ON PORT: 30303", self.eth1) };
+                        msg.write_red();
+                    },
                     Err(e) => {
                         if e.kind() == ErrorKind::AddrInUse {
-                            println!("ERROR: {}", e);
+                            let msg = Rezzy{ message: format!("{:?} is listening on port: 30303", self.eth1) };
+                            msg.write_green();
                         } else {
-                            println!("different err");
+                            let msg = Rezzy{ message: format!("{:?} misc error when listening on 30303", e) };
+                            msg.write_yellow();
                         }
                     }
                 }
                 match TcpListener::bind("127.0.0.1:8545") {
-                    Ok(_) => println!("should not be able to do this"),
+                    Ok(_) => {
+                        let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING ON PORT: 8545", self.eth1) };
+                        msg.write_red();
+                    },
                     Err(e) => {
                         if e.kind() == ErrorKind::AddrInUse {
-                            println!("ERROR: {}", e);
+                            let msg = Rezzy{ message: format!("{:?} is listening on port: 8545", self.eth1) };
+                            msg.write_green();
                         } else {
-                            println!("different err");
+                            let msg = Rezzy{ message: format!("{:?} misc error when listening on 8545", e) };
+                            msg.write_yellow();
+                        }
+                    }
+                }
+                match TcpListener::bind("127.0.0.1:22") {
+                    Ok(_) => {
+                        // no ssh agent running here ... noice
+                    },
+                    Err(e) => {
+                        if e.kind() == ErrorKind::AddrInUse {
+                            let msg = Rezzy{ message: format!("{:?} security best practices recommend moving the standard ssh port", self.eth1) };
+                            msg.write_red();
+                        } else if e.kind()  == ErrorKind::PermissionDenied {
+                            let msg = Rezzy{ message: format!("Could not access privilaged port 22. Either run me as root user or run `sudo netstat -lpnut | grep ssh` to ensure ssh is not running on the standard port") };
+                            msg.write_yellow();
+                        } else {
+                            let msg = Rezzy{ message: format!("{:?} misc error when listening on 22", e) };
+                            msg.write_yellow();
                         }
                     }
                 }
             }
-            _ => println!("all eth1 on same ports"),
         }
-    
-
-    
+        match self.eth2 {
+            Eth2Client::LIGHTHOUSE | Eth2Client::NIMBUS | Eth2Client::TEKU => {
+                match TcpListener::bind("127.0.0.1:9000") {
+                    Ok(_) => {
+                        let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING ON PORT: 9000", self.eth2) };
+                        msg.write_red();
+                    },
+                    Err(e) => {
+                        if e.kind() == ErrorKind::AddrInUse {
+                            let msg = Rezzy{ message: format!("{:?} is listening on port: 9000", self.eth2) };
+                            msg.write_green();
+                        } else {
+                            let msg = Rezzy{ message: format!("{:?} misc error when listening on 9000", e) };
+                            msg.write_yellow();
+                        }
+                    }
+                }   
+            }
+            Eth2Client::PRYSM => {
+                match TcpListener::bind("127.0.0.1:13000") {
+                    Ok(_) => {
+                        let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING ON PORT: 13000", self.eth2) };
+                        msg.write_red();
+                    },
+                    Err(e) => {
+                        if e.kind() == ErrorKind::AddrInUse {
+                            let msg = Rezzy{ message: format!("{:?} is listening on port: 13000", self.eth2) };
+                            msg.write_green();
+                        } else {
+                            let msg = Rezzy{ message: format!("{:?} misc error when listening on 13000", e) };
+                            msg.write_yellow();
+                        }
+                    }
+                }   
+            }
+            _ => {
+                // figure out a better way of handling this,
+            }
+        }
     }
-    pub fn sys_req(&self) {
-        let mut sys = System::new_all();
+    pub fn eth1_req(&self) {
+        // To refresh all system information:
+        // sys.refresh_all();
     
-        // check os ver
-        if sys.get_name().unwrap().eq("Ubuntu") {
-            if sys.get_os_version().unwrap().eq("20.04") {
-                let msg = format!("OS Ver OKAY: {:?}", sys.get_os_version());
-                let r = Rezzy::new(GREEN, msg);
-                r.build_output();
+        // // We show the processes and some of their information:
+        // for (pid, process) in sys.get_processes() {
+        //     if process.name().eq("chrome") {
+        //         println!("[{}] {} {:?}", pid, process.name(), process.disk_usage());
+        //         break
+        //     }
+        // }
+    }
 
+    pub fn sys_req(&self) {
+        println!("System Requirements:");
+        let response: ntp::packet::Packet = ntp::request("0.pool.ntp.org:123").unwrap();
+        let ntp_time = response.transmit_time;
+        let loc = Local::now();
+        println!("Time Sync - NTP {} Local {:?}", ntp_time, loc.time());
+
+        let sys = System::new_all();
+    
+        let os = sys.get_name().unwrap().to_lowercase();
+        // check os ver
+        if os.eq("ubuntu") {
+            let lts = "20.04";
+            let cur = sys.get_os_version().unwrap();
+            if cur.eq(lts) {
+                let msg = Rezzy{ message: format!("OS Version up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
+                msg.write_green();
             } else {
-                let msg = format!("Please upgrade your OS");
-                let r = Rezzy::new(RED, msg);
-                r.build_output();
+                let msg = Rezzy{ message: format!("OS Version NOT up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
+                msg.write_red();
+            }
+        } else if os.eq("darwin") {
+            let lts = "11.2.1";
+            let cur = sys.get_os_version().unwrap();
+            if cur.eq("11.2.1") {
+                let msg = Rezzy{ message: format!("OS Version up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
+                msg.write_green();
+            } else {
+                let msg = Rezzy{ message: format!("OS Version NOT up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
+                msg.write_red();
             }
         }
     
         // check sys memory
         let mem = sys.get_total_memory();
-        if mem > 17179869 {
-            let msg = format!("Memory requirement reached: {}", mem);
-            let r = Rezzy::new(GREEN, msg);
-            r.build_output();
-        } else if mem < 17179869 && mem > 8589934 {
-            let msg = format!("Minimum memory requirement reached. Current:{} Preferred:{}", mem, 17179869);
-            let r = Rezzy::new(YELLOW, msg);
-            r.build_output();
+        if mem > 16000000 {
+            let msg = Rezzy{ message: format!("Memory requirement reached: \n\t Preferred 16GB(min 8GB) => Have {} KB", mem) };
+            msg.write_green();
+        } else if mem < 16000000 && mem > 8000000 {
+            let msg = Rezzy{ message: format!("Min Memory requirement reached: \n\t Preferred 16GB(min 8GB) => Have {} KB", mem) };
+            msg.write_yellow();
         } else {
-            let msg= format!("Memory requirement not reached! Current:{} Required:{}", mem, 8589934);
-            let r = Rezzy::new(RED, msg);
-            r.build_output();
+            let msg = Rezzy{ message: format!("Memory requirement NOT reached: \n\t Preferred 16GB(min 8GB) => Have {} KB", mem) };
+            msg.write_red();
         }
     
         // check num processors
         let proc = sys.get_processors().len();
         if proc > 4 {
-            let msg = format!("Processor count requirement reached: {}", proc);
-            let r = Rezzy::new(GREEN, msg);
-            r.build_output();
+            let msg = Rezzy{ message: format!("Processor count requirement reached: \n\t Preferred 4 CPU(s)(min 2) => Have {} CPU(s)", proc) };
+            msg.write_green();
         } else if proc < 4 && proc > 2 {
-            let msg = format!("Minimum processor count requirement reached. Current:{} Preferred:{}", proc, 4);
-            let r = Rezzy::new(YELLOW, msg);
-            r.build_output();
+            let msg = Rezzy{ message: format!("Min Processor count requirement reached: \n\t Preferred 4 CPU(s)(min 2) => Have {} CPU(s)", proc) };
+            msg.write_yellow();
         } else {
-            let msg = format!("Minimum processor count requirement failed. Current:{} Required:{}", proc, 4);
-            let r = Rezzy::new(RED, msg);
-            r.build_output();
+            let msg = Rezzy{ message: format!("Processor count requirement NOT reached: \n\t Preferred 4 CPU(s)(min 2) => Have {} CPU(s)", proc) };
+            msg.write_red();
         }
     
-        // check disk size
+        let mut largest_disk = 0;
         for disk in sys.get_disks() {
-            let d = disk.get_total_space();
-            if d > 1073741824000 {
-                let msg = format!("Disk size requirement reached on {:?} Size:{}", disk.get_name(), d);
-                let r = Rezzy::new(GREEN, msg);
-                r.build_output();
-                break
-            } else if d < 1073741824000 && d > 137438953472 {
-                let msg = format!("Minimum disk size requirement reached on {:?} Current:{} Preferred:{}", disk.get_name(), d, "1TB");
-                let r = Rezzy::new(YELLOW, msg);
-                r.build_output();
-                break
-            } else {
-                let msg = format!("Minimum disk size requirement reached on {:?} Current:{} Preferred:{}",disk.get_name(), d, "1TB");
-                let r = Rezzy::new(RED, msg);
-                r.build_output();
+            if disk.get_total_space() > largest_disk {
+                largest_disk = disk.get_total_space();
             }
         }
-    
-        // To refresh all system information:
-        sys.refresh_all();
-    
-        // We show the processes and some of their information:
-        for (pid, process) in sys.get_processes() {
-            if process.name().eq("chrome") {
-                println!("[{}] {} {:?}", pid, process.name(), process.disk_usage());
-                break
-            }
+        // check disk size requirements
+        if largest_disk > 1000000000000 {
+            let msg = Rezzy{ message: format!("Disk size requirement reached: \n\t Preffered 1TB(min 128GB) => Have {:?} bytes", largest_disk) };
+            msg.write_green();
+        } else if largest_disk < 1000000000000 && largest_disk > 128000000000 {
+            let msg = Rezzy{ message: format!("Min Disk size requirement reached: \n\t Preffered 1TB(min 128GB) => Have {:?} bytes", largest_disk) };
+            msg.write_yellow();
+        } else {
+            let msg = Rezzy{ message: format!("Disk size requirement  NOTreached: \n\t Preffered 1TB(min 128GB) => Have {:?} bytes", largest_disk) };
+            msg.write_red();
         }
+
+
     }    
 }
 
