@@ -73,31 +73,37 @@ impl Valid8r {
         // TODO: 
         //  - remove all unwraps and provide helpful errors
     
-        println!("Valid8r is Valid8ing your Valid8r\n");
+        let banner = Rezzy{ message: format!("Valid8r is Valid8ing your Valid8r") };
+        banner.bold();
         self.sys_req();
 
         self.net_req();
 
-        println!("\nETH1 Requirements: {:?}", self.eth1);
         // can we talk to infura
         // are we synced w/ the latest block
         match self.eth1 {
-            Eth1Client::GETH => geth_check(),
-            Eth1Client::BESU => besu_check(),
-            Eth1Client::NETHERMIND => nethermind_check(),
-            Eth1Client::OPENETHEREUM => open_ethereum_check(),
+            Eth1Client::GETH => {
+                let _resp = eth1_check("GETH");
+            }
+            Eth1Client::BESU => {
+                let _resp = eth1_check("BESU");
+            },
+            Eth1Client::NETHERMIND => {
+                let _resp = eth1_check("NETHERMIND");
+            },
+            Eth1Client::OPENETHEREUM => {
+                let _resp = eth1_check("OPENETHEREUM");
+            },
             _ => println!("can't happen")
         }
 
+        //println!("\nETH2 Requirements: {:?}", self.eth2);
 
-        println!("\nETH2 Requirements: {:?}", self.eth2);
-
-        // println!("done with net\n\n");
-    
         Ok(())
     }
     pub fn net_req(&self) {
-        println!("\nNetwork Requirements:");
+        let banner = Rezzy{ message: format!("\nNetwork Requirements:") };
+        banner.bold();
         match self.eth1 {
             _ => {
                 match TcpListener::bind("127.0.0.1:30303") {
@@ -132,7 +138,8 @@ impl Valid8r {
                 }
                 match TcpListener::bind("127.0.0.1:22") {
                     Ok(_) => {
-                        // no ssh agent running here ... noice
+                        let msg = Rezzy{ message: format!("No default ssh agent running on port: 22") };
+                        msg.write_green();
                     },
                     Err(e) => {
                         if e.kind() == ErrorKind::AddrInUse {
@@ -189,25 +196,13 @@ impl Valid8r {
             }
         }
     }
-    pub fn eth1_req(&self) {
-        // To refresh all system information:
-        // sys.refresh_all();
-    
-        // // We show the processes and some of their information:
-        // for (pid, process) in sys.get_processes() {
-        //     if process.name().eq("chrome") {
-        //         println!("[{}] {} {:?}", pid, process.name(), process.disk_usage());
-        //         break
-        //     }
-        // }
-    }
-
     pub fn sys_req(&self) {
-        println!("System Requirements:");
+        let banner = Rezzy{ message: format!("\nSystem Requirements:") };
+        banner.bold();
         let response: ntp::packet::Packet = ntp::request("0.pool.ntp.org:123").unwrap();
         let ntp_time = response.transmit_time;
         let loc = Local::now();
-        println!("Time Sync - NTP {} Local {:?}", ntp_time, loc.time());
+        println!("Time Sync - NTP {} vs LOCAL {:?}", ntp_time, loc.time());
 
         let sys = System::new_all();
     
