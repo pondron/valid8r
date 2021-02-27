@@ -136,24 +136,6 @@ impl Valid8r {
                         }
                     }
                 }
-                match TcpListener::bind("127.0.0.1:22") {
-                    Ok(_) => {
-                        let msg = Rezzy{ message: format!("No default ssh agent running on port: 22") };
-                        msg.write_green();
-                    },
-                    Err(e) => {
-                        if e.kind() == ErrorKind::AddrInUse {
-                            let msg = Rezzy{ message: format!("{:?} security best practices recommend moving the standard ssh port", self.eth1) };
-                            msg.write_red();
-                        } else if e.kind()  == ErrorKind::PermissionDenied {
-                            let msg = Rezzy{ message: format!("Could not access privilaged port 22. Either run me as root user or run `sudo netstat -lpnut | grep ssh` to ensure ssh is not running on the standard port") };
-                            msg.write_yellow();
-                        } else {
-                            let msg = Rezzy{ message: format!("{:?} misc error when listening on 22", e) };
-                            msg.write_yellow();
-                        }
-                    }
-                }
             }
         }
         match self.eth2 {
@@ -193,6 +175,24 @@ impl Valid8r {
             }
             _ => {
                 // figure out a better way of handling this,
+            }
+        }
+        match TcpListener::bind("127.0.0.1:22") {
+            Ok(_) => {
+                let msg = Rezzy{ message: format!("No default ssh agent running on port: 22") };
+                msg.write_green();
+            },
+            Err(e) => {
+                if e.kind() == ErrorKind::AddrInUse {
+                    let msg = Rezzy{ message: format!("{:?} security best practices recommend moving the standard ssh port", self.eth1) };
+                    msg.write_red();
+                } else if e.kind()  == ErrorKind::PermissionDenied {
+                    let msg = Rezzy{ message: format!("Could not access privilaged port 22. Either run me as root user or run `sudo netstat -lpnut | grep ssh` to ensure ssh is not running on the standard port") };
+                    msg.write_yellow();
+                } else {
+                    let msg = Rezzy{ message: format!("{:?} misc error when listening on 22", e) };
+                    msg.write_yellow();
+                }
             }
         }
     }

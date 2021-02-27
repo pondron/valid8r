@@ -3,7 +3,6 @@ use serde::{Serialize, Deserialize};
 use serde_json::json;
 use reqwest::*;
 use crate::output::Rezzy;
-use std::collections::BTreeMap as Map;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct RpcRequest {
@@ -45,29 +44,49 @@ fn eth_req(st: &str) -> Result<reqwest::blocking::Response> {
 //GETH has found peers: Some(String("0x32"))
 //GETH is on mainnet: Some(String("1"))
 
-fn git_req() -> Result<()> {
+fn git_req() -> Result<String> {
     let client = reqwest::blocking::Client::new();
     let res = client.get("https://api.github.com/repos/ethereum/go-ethereum/releases/latest")
         .header("User-Agent", "request")
         .send().unwrap()
         .text().unwrap();
 
-    println!("JSON: {:?}", res);
     let j: serde_json::Value = serde_json::from_str(res.as_str()).unwrap();
-    println!("GIT TAG: {:?}", j["tag_name"]);
-    Ok(())
+    Ok(String::from(j["tag_name"].as_str().unwrap()))
 }
 
 pub fn eth1_check(eth1: &str) -> Result<()> {
-    let n = git_req();
     let res4 = eth_req("web3_clientVersion").unwrap();
     let r4 = res4.status();
 
     match r4 {
         reqwest::StatusCode::OK => {
             let j: RpcResponse = res4.json().unwrap();
-            let banner = Rezzy{ message: format!("\nETH1 Client Check: {}({})", eth1, j.result.unwrap().as_str().unwrap()) };
+            let ver = String::from(j.result.unwrap().as_str().unwrap());
+            let banner = Rezzy{ message: format!("\nETH1 Client Check: {}({})", eth1, &ver) };
             banner.bold();
+            let n = git_req().unwrap();
+            if ver.contains(&n.as_str()) {
+                let msg = Rezzy{ message: format!("{} is the latest release: {:?}", eth1, &n)  };
+                msg.write_green();
+            } else {
+                let msg = Rezzy{ message: format!("{} needs to be updated to latest release: {}", eth1, &n) };
+                msg.write_red()
+            }
+        }
+        _ => {
+            let msg = Rezzy{ message: format!("unable to get peer count from GETH") };
+            msg.write_red()
+        }
+    }
+    let res3 = eth_req("net_version").unwrap();
+    let r3 = res3.status();
+
+    match r3 {
+        reqwest::StatusCode::OK => {
+            let j: RpcResponse = res3.json().unwrap();
+            let msg = Rezzy{ message: format!("{} is on mainnet: {:?}", eth1, j.result.unwrap())  };
+            msg.write_green();
         }
         _ => {
             let msg = Rezzy{ message: format!("unable to get peer count from GETH") };
@@ -81,7 +100,7 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
     match r1 {
         reqwest::StatusCode::OK => {
             let j: RpcResponse = res1.json().unwrap();
-            let msg = Rezzy{ message: format!("{} is in sync: {:?}", eth1, j.result)  };
+            let msg = Rezzy{ message: format!("{} is in sync: {:?}", eth1, j.result.unwrap())  };
             msg.write_green();
         }
         _ => {
@@ -95,7 +114,7 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
     match r2 {
         reqwest::StatusCode::OK => {
             let j: RpcResponse = res2.json().unwrap();
-            let msg = Rezzy{ message: format!("{} has found peers: {:?}", eth1, j.result)  };
+            let msg = Rezzy{ message: format!("{} has found peers: {:?}", eth1, j.result.unwrap())  };
             msg.write_green();
         }
         _ => {
@@ -103,20 +122,7 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
             msg.write_red()
         }
     }
-    let res3 = eth_req("net_version").unwrap();
-    let r3 = res3.status();
 
-    match r3 {
-        reqwest::StatusCode::OK => {
-            let j: RpcResponse = res3.json().unwrap();
-            let msg = Rezzy{ message: format!("{} is on mainnet: {:?}", eth1, j.result)  };
-            msg.write_green();
-        }
-        _ => {
-            let msg = Rezzy{ message: format!("unable to get peer count from GETH") };
-            msg.write_red()
-        }
-    }
     
     Ok(())
 }
