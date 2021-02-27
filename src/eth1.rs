@@ -4,6 +4,11 @@ use serde_json::json;
 use reqwest::*;
 use crate::output::Rezzy;
 
+static GETH_GIT: &str = "https://api.github.com/repos/ethereum/go-ethereum/releases/latest";
+static BESU_GIT: &str = "https://api.github.com/repos/hyperledger/besu/releases/latest";
+static NETHERMIND_GIT: &str = "https://api.github.com/repos/nethermindeth/nethermind/releases/latest";
+static OPENETHEREUM_GIT: &str = "https://api.github.com/repos/openethereum/openethereum/releases/latest";
+
 #[derive(Serialize, Deserialize, Debug)]
 struct RpcRequest {
     jsonrpc: String,
@@ -45,9 +50,9 @@ fn eth_req(st: &str) -> Result<reqwest::blocking::Response> {
     Ok(res)
 }
 
-fn git_req() -> Result<String> {
+fn git_req(mut repo: &str) -> Result<String> {
     let client = reqwest::blocking::Client::new();
-    let res = client.get("https://api.github.com/repos/ethereum/go-ethereum/releases/latest")
+    let res = client.get(repo)
         .header("User-Agent", "request")
         .send()?
         .text()?;
@@ -82,8 +87,15 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
         reqwest::StatusCode::OK => {
             let j: RpcResponse = res4.json()?;
             let ver = String::from(j.result.unwrap().as_str().unwrap());
+            let mut repo = GETH_GIT;
+            match eth1 {
+                "BESU" => repo = BESU_GIT,
+                "NETHERMIND" => repo = NETHERMIND_GIT,
+                "OPENETHEREUM" => repo = OPENETHEREUM_GIT,
+                _ => (),
+            }
 
-            match git_req(){
+            match git_req(repo){
                 Ok(r) => {
                     if ver.contains(&r.as_str()) {
                         let msg = Rezzy{ message: format!("{}({}) is the latest release: {:?}", eth1, &ver, &r)  };

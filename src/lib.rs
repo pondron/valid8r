@@ -75,6 +75,7 @@ impl Valid8r {
     
         let banner = Rezzy{ message: format!("Valid8r is Valid8ing your Valid8r") };
         banner.bold();
+
         self.sys_req();
 
         self.net_req();
