@@ -3,6 +3,7 @@ use serde::{Serialize, Deserialize};
 use serde_json::json;
 use reqwest::*;
 use crate::output::Rezzy;
+use std::collections::BTreeMap as Map;
 
 #[derive(Serialize, Deserialize, Debug)]
 struct RpcRequest {
@@ -38,7 +39,27 @@ fn eth_req(st: &str) -> Result<reqwest::blocking::Response> {
     Ok(res)
 }
 
+//GIT TAG: String("v1.9.25")
+//ETH1 Client Check: GETH(Geth/v1.9.25-stable-e7872729/linux-amd64/go1.15.6)
+//GETH is in sync: Some(Bool(false))
+//GETH has found peers: Some(String("0x32"))
+//GETH is on mainnet: Some(String("1"))
+
+fn git_req() -> Result<()> {
+    let client = reqwest::blocking::Client::new();
+    let res = client.get("https://api.github.com/repos/ethereum/go-ethereum/releases/latest")
+        .header("User-Agent", "request")
+        .send().unwrap()
+        .text().unwrap();
+
+    println!("JSON: {:?}", res);
+    let j: serde_json::Value = serde_json::from_str(res.as_str()).unwrap();
+    println!("GIT TAG: {:?}", j["tag_name"]);
+    Ok(())
+}
+
 pub fn eth1_check(eth1: &str) -> Result<()> {
+    let n = git_req();
     let res4 = eth_req("web3_clientVersion").unwrap();
     let r4 = res4.status();
 
