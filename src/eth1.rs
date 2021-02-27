@@ -136,15 +136,15 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
         }
     }
 
-    let res1 = eth_req("eth_blockNumber").unwrap();
-    let ji: RpcResponse = res1.json().unwrap();
+    let res1 = eth_req("eth_blockNumber")?;
+    let ji: RpcResponse = res1.json()?;
 
-    let res5 = eth_req("eth_syncing").unwrap();
+    let res5 = eth_req("eth_syncing")?;
     let r5 = res5.status();
 
     match r5 {
         reqwest::StatusCode::OK => {
-            let j: RpcResponse = res5.json().unwrap();
+            let j: RpcResponse = res5.json()?;
             if !j.result.unwrap().as_bool().unwrap() {
                 let msg = Rezzy{ message: format!("{} is in sync, latest block: {:?}(verify at https://etherscan.io/blocks)", eth1, i64::from_str_radix(ji.result.unwrap().as_str().unwrap().trim_start_matches("0x"), 16).unwrap())  };
                 msg.write_green();
@@ -163,7 +163,7 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
 
     match r2 {
         reqwest::StatusCode::OK => {
-            let j: RpcResponse = res2.json();
+            let j: RpcResponse = res2.json()?;
             let msg = Rezzy{ message: format!("{} currently has {:?} peers", eth1, i64::from_str_radix(j.result.unwrap().as_str().unwrap().trim_start_matches("0x"), 16).unwrap())  };
             msg.write_green();
         }
