@@ -83,16 +83,28 @@ impl Valid8r {
         // are we synced w/ the latest block
         match self.eth1 {
             Eth1Client::GETH => {
-                let _resp = eth1_check("GETH");
+                if let Err(_e) = eth1_check("GETH") {
+                    let msg = Rezzy{ message: format!("VALID8R could not connect to GETH") };
+                    msg.write_red();
+                }
             }
             Eth1Client::BESU => {
-                let _resp = eth1_check("BESU");
+                if let Err(_e) = eth1_check("BESU") {
+                    let msg = Rezzy{ message: format!("VALID8R ERROR cound not connect to BESU") };
+                    msg.write_red();
+                }
             },
             Eth1Client::NETHERMIND => {
-                let _resp = eth1_check("NETHERMIND");
+                if let Err(_e) = eth1_check("NETHERMIND") {
+                    let msg = Rezzy{ message: format!("VALID8R ERROR cound not connect to NETHERMIND") };
+                    msg.write_red();
+                }
             },
             Eth1Client::OPENETHEREUM => {
-                let _resp = eth1_check("OPENETHEREUM");
+                if let Err(_e) = eth1_check("OPENETHEREUM") {
+                    let msg = Rezzy{ message: format!("VALID8R ERROR cound not connect to OPENETHEREUM") };
+                    msg.write_red();
+                }
             },
             _ => println!("can't happen")
         }

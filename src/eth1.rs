@@ -28,7 +28,14 @@ fn eth_req(st: &str) -> Result<reqwest::blocking::Response> {
         id: String::from("1"),
     };
 
-    let serialized = serde_json::to_string(&req).unwrap();
+    let serialized = match serde_json::to_string(&req) {
+        Ok(s) => s,
+        Err(e) => {
+            let msg = Rezzy{ message: format!("Error reading request: {:?}", e) };
+            msg.write_red();
+            String::from("")
+        },
+    };
 
     let client = reqwest::blocking::Client::new();
     let res = client.post("http://0.0.0.0:8545")
@@ -38,53 +45,71 @@ fn eth_req(st: &str) -> Result<reqwest::blocking::Response> {
     Ok(res)
 }
 
-//GIT TAG: String("v1.9.25")
-//ETH1 Client Check: GETH(Geth/v1.9.25-stable-e7872729/linux-amd64/go1.15.6)
-//GETH is in sync: Some(Bool(false))
-//GETH has found peers: Some(String("0x32"))
-//GETH is on mainnet: Some(String("1"))
-
 fn git_req() -> Result<String> {
     let client = reqwest::blocking::Client::new();
     let res = client.get("https://api.github.com/repos/ethereum/go-ethereum/releases/latest")
         .header("User-Agent", "request")
-        .send().unwrap()
-        .text().unwrap();
+        .send()?
+        .text()?;
 
-    let j: serde_json::Value = serde_json::from_str(res.as_str()).unwrap();
-    Ok(String::from(j["tag_name"].as_str().unwrap()))
+    let j: serde_json::Value = match serde_json::from_str(res.as_str()) {
+        Ok(s) => s,
+        Err(e) => {
+            let msg = Rezzy{ message: format!("Error reading request: {:?}", e) };
+            msg.write_red();
+            json![""]
+        },
+    };
+    let mut x = "";
+    match j["tag_name"].as_str() {
+        Some(v) => x = v,
+        None => {
+            let msg = Rezzy{ message: format!("Could not pull client release version") };
+            msg.write_red();
+        },
+    }
+    Ok(String::from(x))
 }
 
 pub fn eth1_check(eth1: &str) -> Result<()> {
-    let res4 = eth_req("web3_clientVersion").unwrap();
+    let banner = Rezzy{ message: format!("\nETH1 Client Check: {}", eth1) };
+    banner.bold();
+
+    let res4 = eth_req("web3_clientVersion")?;
     let r4 = res4.status();
 
     match r4 {
         reqwest::StatusCode::OK => {
-            let j: RpcResponse = res4.json().unwrap();
+            let j: RpcResponse = res4.json()?;
             let ver = String::from(j.result.unwrap().as_str().unwrap());
-            let banner = Rezzy{ message: format!("\nETH1 Client Check: {}({})", eth1, &ver) };
-            banner.bold();
-            let n = git_req().unwrap();
-            if ver.contains(&n.as_str()) {
-                let msg = Rezzy{ message: format!("{} is the latest release: {:?}", eth1, &n)  };
-                msg.write_green();
-            } else {
-                let msg = Rezzy{ message: format!("{} needs to be updated to latest release: {}", eth1, &n) };
-                msg.write_red()
-            }
+
+            match git_req(){
+                Ok(r) => {
+                    if ver.contains(&r.as_str()) {
+                        let msg = Rezzy{ message: format!("{}({}) is the latest release: {:?}", eth1, &ver, &r)  };
+                        msg.write_green();
+                    } else {
+                        let msg = Rezzy{ message: format!("{} needs to be updated to latest release: {}", eth1, &r) };
+                        msg.write_red();
+                    }
+                },
+                Err(e) => {
+                    let msg = Rezzy{ message: format!("{} error fetching git release: {:?}", eth1, e) };
+                    msg.write_red();
+                }
+            };
         }
         _ => {
             let msg = Rezzy{ message: format!("unable to get peer count from GETH") };
             msg.write_red()
         }
     }
-    let res3 = eth_req("net_version").unwrap();
+    let res3 = eth_req("net_version")?;
     let r3 = res3.status();
 
     match r3 {
         reqwest::StatusCode::OK => {
-            let j: RpcResponse = res3.json().unwrap();
+            let j: RpcResponse = res3.json()?;
             let msg = Rezzy{ message: format!("{} is on mainnet: {:?}", eth1, j.result.unwrap())  };
             msg.write_green();
         }
@@ -94,12 +119,12 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
         }
     }
 
-    let res1 = eth_req("eth_syncing").unwrap();
+    let res1 = eth_req("eth_syncing")?;
     let r1 = res1.status();
 
     match r1 {
         reqwest::StatusCode::OK => {
-            let j: RpcResponse = res1.json().unwrap();
+            let j: RpcResponse = res1.json()?;
             let msg = Rezzy{ message: format!("{} is in sync: {:?}", eth1, j.result.unwrap())  };
             msg.write_green();
         }
@@ -108,12 +133,12 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
             msg.write_red()
         }
     }
-    let res2 = eth_req("net_peerCount").unwrap();
+    let res2 = eth_req("net_peerCount")?;
     let r2 = res2.status();
 
     match r2 {
         reqwest::StatusCode::OK => {
-            let j: RpcResponse = res2.json().unwrap();
+            let j: RpcResponse = res2.json()?;
             let msg = Rezzy{ message: format!("{} has found peers: {:?}", eth1, j.result.unwrap())  };
             msg.write_green();
         }
@@ -122,7 +147,6 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
             msg.write_red()
         }
     }
-
     
     Ok(())
 }
