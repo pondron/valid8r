@@ -85,8 +85,13 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
     match r3 {
         reqwest::StatusCode::OK => {
             let j: RpcResponse = res3.json().unwrap();
-            let msg = Rezzy{ message: format!("{} is on mainnet: {:?}", eth1, j.result.unwrap())  };
-            msg.write_green();
+            if j.result.unwrap().as_str().unwrap().eq("1") {
+                let msg = Rezzy{ message: format!("{} is on mainnet", eth1)  };
+                msg.write_green();
+            } else {
+                let msg = Rezzy{ message: format!("{} is currently NOT on mainnet", eth1) };
+                msg.write_red()
+            }
         }
         _ => {
             let msg = Rezzy{ message: format!("unable to get peer count from GETH") };
@@ -94,14 +99,22 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
         }
     }
 
-    let res1 = eth_req("eth_syncing").unwrap();
-    let r1 = res1.status();
+    let res1 = eth_req("eth_blockNumber").unwrap();
+    let ji: RpcResponse = res1.json().unwrap();
 
-    match r1 {
+    let res5 = eth_req("eth_syncing").unwrap();
+    let r5 = res5.status();
+
+    match r5 {
         reqwest::StatusCode::OK => {
-            let j: RpcResponse = res1.json().unwrap();
-            let msg = Rezzy{ message: format!("{} is in sync: {:?}", eth1, j.result.unwrap())  };
-            msg.write_green();
+            let j: RpcResponse = res5.json().unwrap();
+            if !j.result.unwrap().as_bool().unwrap() {
+                let msg = Rezzy{ message: format!("{} is in sync, latest block: {:?}(verify at https://etherscan.io/blocks)", eth1, i64::from_str_radix(ji.result.unwrap().as_str().unwrap().trim_start_matches("0x"), 16).unwrap())  };
+                msg.write_green();
+            } else {
+                let msg = Rezzy{ message: format!("{} is NOT currently syncd", eth1) };
+                msg.write_red()
+            }
         }
         _ => {
             let msg = Rezzy{ message: format!("unable to get peer count from GETH") };
@@ -114,7 +127,7 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
     match r2 {
         reqwest::StatusCode::OK => {
             let j: RpcResponse = res2.json().unwrap();
-            let msg = Rezzy{ message: format!("{} has found peers: {:?}", eth1, j.result.unwrap())  };
+            let msg = Rezzy{ message: format!("{} currently has {:?} peers", eth1, i64::from_str_radix(j.result.unwrap().as_str().unwrap().trim_start_matches("0x"), 16).unwrap())  };
             msg.write_green();
         }
         _ => {
@@ -126,3 +139,4 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
     
     Ok(())
 }
+
