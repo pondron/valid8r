@@ -1,10 +1,19 @@
 [package]
-name = "valid8er"
+name = "valid8r"
 version = "0.1.0"
-authors = ["tclukies"]
+authors = ["tclukies", "bgoebel"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "valid8r"
+path = "src/lib.rs"
 
 [dependencies]
 structopt = "0.3.13"
+sysinfo = "0.16.1"
+colored = "2.0.0"
+ntp = "0.5.0"
+chrono = "0.4.19"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+reqwest = { version = "0.11", features = ["blocking", "json"] }
