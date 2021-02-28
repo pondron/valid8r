@@ -110,6 +110,7 @@ impl Valid8r {
             _ => println!("can't happen")
         }
 
+        println!("\n");
         //println!("\nETH2 Requirements: {:?}", self.eth2);
 
         Ok(())
@@ -286,8 +287,6 @@ impl Valid8r {
             let msg = Rezzy{ message: format!("Disk size requirement  NOTreached: \n\t Preffered 1TB(min 300GB) => Have {:?} bytes", largest_disk) };
             msg.write_red();
         }
-
-
     }    
 }
 

@@ -113,7 +113,7 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
         }
         _ => {
             let msg = Rezzy{ message: format!("unable to get peer count from GETH") };
-            msg.write_red()
+            msg.write_red();
         }
     }
     let res3 = eth_req("net_version")?;
@@ -121,18 +121,22 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
 
     match r3 {
         reqwest::StatusCode::OK => {
-            let j: RpcResponse = res3.json().unwrap();
-            if j.result.unwrap().as_str().unwrap().eq("1") {
-                let msg = Rezzy{ message: format!("{} is on mainnet", eth1)  };
-                msg.write_green();
-            } else {
-                let msg = Rezzy{ message: format!("{} is currently NOT on mainnet", eth1) };
-                msg.write_red()
+            let j: RpcResponse = res3.json()?;
+            if let Some(re) = j.result { 
+                if let Some(st) = re.as_str() {
+                    if st.eq("1") {
+                        let msg = Rezzy{ message: format!("{} is on mainnet", eth1)  };
+                        msg.write_green();
+                    } else {
+                        let msg = Rezzy{ message: format!("{} is currently NOT on mainnet", eth1) };
+                        msg.write_red();
+                    }
+                }
             }
         }
         _ => {
             let msg = Rezzy{ message: format!("unable to get peer count from GETH") };
-            msg.write_red()
+            msg.write_red();
         }
     }
 
@@ -145,17 +149,27 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
     match r5 {
         reqwest::StatusCode::OK => {
             let j: RpcResponse = res5.json()?;
-            if !j.result.unwrap().as_bool().unwrap() {
-                let msg = Rezzy{ message: format!("{} is in sync, latest block: {:?}(verify at https://etherscan.io/blocks)", eth1, i64::from_str_radix(ji.result.unwrap().as_str().unwrap().trim_start_matches("0x"), 16).unwrap())  };
-                msg.write_green();
-            } else {
-                let msg = Rezzy{ message: format!("{} is NOT currently syncd", eth1) };
-                msg.write_red()
+            match j.result {
+                Some(r) => {
+                    if let Some(re) = r.as_bool() {
+                        if !re {
+                            let msg = Rezzy{ message: format!("{} is in sync, latest block: {:?}(verify at https://etherscan.io/blocks)", eth1, i64::from_str_radix(ji.result.unwrap().as_str().unwrap().trim_start_matches("0x"), 16).unwrap())  };
+                            msg.write_green();
+                        }
+                    } else {
+                        let msg = Rezzy{ message: format!("{} is NOT currently syncd", eth1) };
+                        msg.write_red();
+                    }
+                },
+                None => {
+                    let msg = Rezzy{ message: format!("{} -> VALID8R communication error", eth1) };
+                    msg.write_red();
+                },
             }
         }
         _ => {
-            let msg = Rezzy{ message: format!("unable to get peer count from GETH") };
-            msg.write_red()
+            let msg = Rezzy{ message: format!("unable to get block status from GETH") };
+            msg.write_red();
         }
     }
     let res2 = eth_req("net_peerCount")?;
@@ -164,12 +178,29 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
     match r2 {
         reqwest::StatusCode::OK => {
             let j: RpcResponse = res2.json()?;
-            let msg = Rezzy{ message: format!("{} currently has {:?} peers", eth1, i64::from_str_radix(j.result.unwrap().as_str().unwrap().trim_start_matches("0x"), 16).unwrap())  };
-            msg.write_green();
+            match j.result {
+                Some(re) => {
+                    if let Some(st) = re.as_str() {
+                        if let Ok(val) = i64::from_str_radix(st.trim_start_matches("0x"), 16) {
+                            if val > 16 {
+                                let msg = Rezzy{ message: format!("{} currently has {:?} peers", eth1, val)  };
+                                msg.write_green();
+                            } else {
+                                let msg = Rezzy{ message: format!("{} does NOT have enough peers({})", eth1, val) };
+                                msg.write_red();
+                            }
+                        }
+                    }
+                },
+                None => {
+                    let msg = Rezzy{ message: format!("unable to get peer count from GETH") };
+                    msg.write_red();
+                },
+            }
         }
         _ => {
             let msg = Rezzy{ message: format!("unable to get peer count from GETH") };
-            msg.write_red()
+            msg.write_red();
         }
     }
     
