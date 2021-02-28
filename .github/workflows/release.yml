@@ -1,7 +1,9 @@
 name: Build and upload binaries to release
 
 on:
-  create
+  push:
+    tags:
+      - "v*"
 
 jobs:
   release:
