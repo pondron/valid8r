@@ -27,6 +27,6 @@ impl Rezzy {
         println!("\u{26A0} {}", self.message.yellow().bold());
     }
     pub fn bold(&self) {
-        println!("{}", self.message.bold());
+        println!("{}", self.message.bold()); 
     }
 }
