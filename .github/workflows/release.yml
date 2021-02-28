@@ -1,8 +1,7 @@
 name: Build and upload binaries to release
 
 on:
-  repository_dispatch:
-    types: [tag-created, create]
+  create
 
 jobs:
   release:
