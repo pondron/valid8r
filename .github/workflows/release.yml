@@ -3,7 +3,7 @@ name: Build and upload binaries to release
 on:
   push:
     tags:
-      - "v*"
+      - "*"
 
 jobs:
   release:
