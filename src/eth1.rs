@@ -137,7 +137,7 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
             };
         }
         _ => {
-            let msg = Rezzy{ message: format!("unable to get peer count from GETH") };
+            let msg = Rezzy{ message: format!("unable to get peer count from {}", eth1) };
             msg.write_red();
         }
     }
@@ -160,7 +160,7 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
             }
         }
         _ => {
-            let msg = Rezzy{ message: format!("unable to get peer count from GETH") };
+            let msg = Rezzy{ message: format!("unable to get peer count from {}", eth1) };
             msg.write_red();
         }
     }
@@ -209,7 +209,7 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
             }
         }
         _ => {
-            let msg = Rezzy{ message: format!("unable to get block status from GETH") };
+            let msg = Rezzy{ message: format!("unable to get block status from {}", eth1) };
             msg.write_red();
         }
     }
@@ -234,13 +234,13 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
                     }
                 },
                 None => {
-                    let msg = Rezzy{ message: format!("unable to get peer count from GETH") };
+                    let msg = Rezzy{ message: format!("unable to get peer count from {}", eth1) };
                     msg.write_red();
                 },
             }
         }
         _ => {
-            let msg = Rezzy{ message: format!("unable to get peer count from GETH") };
+            let msg = Rezzy{ message: format!("unable to get peer count from {}", eth1) };
             msg.write_red();
         }
     }
