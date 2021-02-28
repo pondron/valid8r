@@ -73,31 +73,51 @@ impl Valid8r {
         // TODO: 
         //  - remove all unwraps and provide helpful errors
     
-        println!("Valid8r is Valid8ing your Valid8r\n");
+        let banner = Rezzy{ message: format!("Valid8r is Valid8ing your Valid8r") };
+        banner.bold();
+
         self.sys_req();
 
         self.net_req();
 
-        println!("\nETH1 Requirements: {:?}", self.eth1);
         // can we talk to infura
         // are we synced w/ the latest block
         match self.eth1 {
-            Eth1Client::GETH => geth_check(),
-            Eth1Client::BESU => besu_check(),
-            Eth1Client::NETHERMIND => nethermind_check(),
-            Eth1Client::OPENETHEREUM => open_ethereum_check(),
+            Eth1Client::GETH => {
+                if let Err(_e) = eth1_check("GETH") {
+                    let msg = Rezzy{ message: format!("VALID8R could not connect to GETH") };
+                    msg.write_red();
+                }
+            }
+            Eth1Client::BESU => {
+                if let Err(_e) = eth1_check("BESU") {
+                    let msg = Rezzy{ message: format!("VALID8R ERROR cound not connect to BESU") };
+                    msg.write_red();
+                }
+            },
+            Eth1Client::NETHERMIND => {
+                if let Err(_e) = eth1_check("NETHERMIND") {
+                    let msg = Rezzy{ message: format!("VALID8R ERROR cound not connect to NETHERMIND") };
+                    msg.write_red();
+                }
+            },
+            Eth1Client::OPENETHEREUM => {
+                if let Err(_e) = eth1_check("OPENETHEREUM") {
+                    let msg = Rezzy{ message: format!("VALID8R ERROR cound not connect to OPENETHEREUM") };
+                    msg.write_red();
+                }
+            },
             _ => println!("can't happen")
         }
 
+        println!("\n");
+        //println!("\nETH2 Requirements: {:?}", self.eth2);
 
-        println!("\nETH2 Requirements: {:?}", self.eth2);
-
-        // println!("done with net\n\n");
-    
         Ok(())
     }
     pub fn net_req(&self) {
-        println!("\nNetwork Requirements:");
+        let banner = Rezzy{ message: format!("\nNetwork Requirements:") };
+        banner.bold();
         match self.eth1 {
             _ => {
                 match TcpListener::bind("127.0.0.1:30303") {
@@ -126,23 +146,6 @@ impl Valid8r {
                             msg.write_green();
                         } else {
                             let msg = Rezzy{ message: format!("{:?} misc error when listening on 8545", e) };
-                            msg.write_yellow();
-                        }
-                    }
-                }
-                match TcpListener::bind("127.0.0.1:22") {
-                    Ok(_) => {
-                        // no ssh agent running here ... noice
-                    },
-                    Err(e) => {
-                        if e.kind() == ErrorKind::AddrInUse {
-                            let msg = Rezzy{ message: format!("{:?} security best practices recommend moving the standard ssh port", self.eth1) };
-                            msg.write_red();
-                        } else if e.kind()  == ErrorKind::PermissionDenied {
-                            let msg = Rezzy{ message: format!("Could not access privilaged port 22. Either run me as root user or run `sudo netstat -lpnut | grep ssh` to ensure ssh is not running on the standard port") };
-                            msg.write_yellow();
-                        } else {
-                            let msg = Rezzy{ message: format!("{:?} misc error when listening on 22", e) };
                             msg.write_yellow();
                         }
                     }
@@ -188,26 +191,32 @@ impl Valid8r {
                 // figure out a better way of handling this,
             }
         }
+        match TcpListener::bind("127.0.0.1:22") {
+            Ok(_) => {
+                let msg = Rezzy{ message: format!("No default ssh agent running on port: 22") };
+                msg.write_green();
+            },
+            Err(e) => {
+                if e.kind() == ErrorKind::AddrInUse {
+                    let msg = Rezzy{ message: format!("{:?} security best practices recommend moving the standard ssh port", self.eth1) };
+                    msg.write_red();
+                } else if e.kind()  == ErrorKind::PermissionDenied {
+                    let msg = Rezzy{ message: format!("Could not access privilaged port 22. Either run me as root user or run `sudo netstat -lpnut | grep ssh` to ensure ssh is not running on the standard port") };
+                    msg.write_yellow();
+                } else {
+                    let msg = Rezzy{ message: format!("{:?} misc error when listening on 22", e) };
+                    msg.write_yellow();
+                }
+            }
+        }
     }
-    pub fn eth1_req(&self) {
-        // To refresh all system information:
-        // sys.refresh_all();
-    
-        // // We show the processes and some of their information:
-        // for (pid, process) in sys.get_processes() {
-        //     if process.name().eq("chrome") {
-        //         println!("[{}] {} {:?}", pid, process.name(), process.disk_usage());
-        //         break
-        //     }
-        // }
-    }
-
     pub fn sys_req(&self) {
-        println!("System Requirements:");
+        let banner = Rezzy{ message: format!("\nSystem Requirements:") };
+        banner.bold();
         let response: ntp::packet::Packet = ntp::request("0.pool.ntp.org:123").unwrap();
         let ntp_time = response.transmit_time;
         let loc = Local::now();
-        println!("Time Sync - NTP {} Local {:?}", ntp_time, loc.time());
+        println!("Time Sync - NTP {} vs LOCAL {:?}", ntp_time, loc.time());
 
         let sys = System::new_all();
     
@@ -269,17 +278,15 @@ impl Valid8r {
         }
         // check disk size requirements
         if largest_disk > 1000000000000 {
-            let msg = Rezzy{ message: format!("Disk size requirement reached: \n\t Preffered 1TB(min 128GB) => Have {:?} bytes", largest_disk) };
+            let msg = Rezzy{ message: format!("Disk size requirement reached: \n\t Preffered 1TB(min 300GB) => Have {:?} bytes", largest_disk) };
             msg.write_green();
-        } else if largest_disk < 1000000000000 && largest_disk > 128000000000 {
-            let msg = Rezzy{ message: format!("Min Disk size requirement reached: \n\t Preffered 1TB(min 128GB) => Have {:?} bytes", largest_disk) };
+        } else if largest_disk < 1000000000000 && largest_disk > 300000000000 {
+            let msg = Rezzy{ message: format!("Min Disk size requirement reached: \n\t Preffered 1TB(min 300GB) => Have {:?} bytes", largest_disk) };
             msg.write_yellow();
         } else {
-            let msg = Rezzy{ message: format!("Disk size requirement  NOTreached: \n\t Preffered 1TB(min 128GB) => Have {:?} bytes", largest_disk) };
+            let msg = Rezzy{ message: format!("Disk size requirement  NOTreached: \n\t Preffered 1TB(min 300GB) => Have {:?} bytes", largest_disk) };
             msg.write_red();
         }
-
-
     }    
 }
 
