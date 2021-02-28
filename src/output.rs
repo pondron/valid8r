@@ -28,5 +28,5 @@ impl Rezzy {
     }
     pub fn bold(&self) {
         println!("{}", self.message.bold());
-    }
+    } 
 }
