@@ -8,6 +8,7 @@ static GETH_GIT: &str = "https://api.github.com/repos/ethereum/go-ethereum/relea
 static BESU_GIT: &str = "https://api.github.com/repos/hyperledger/besu/releases/latest";
 static NETHERMIND_GIT: &str = "https://api.github.com/repos/nethermindeth/nethermind/releases/latest";
 static OPENETHEREUM_GIT: &str = "https://api.github.com/repos/openethereum/openethereum/releases/latest";
+static INFURA: &str = "https://mainnet.infura.io/v3/65daaf22efb6473e8b56161095669ca8";
 
 #[derive(Serialize, Deserialize, Debug)]
 struct RpcRequest {
@@ -44,6 +45,30 @@ fn eth_req(st: &str) -> Result<reqwest::blocking::Response> {
 
     let client = reqwest::blocking::Client::new();
     let res = client.post("http://0.0.0.0:8545")
+        .header("Content-Type", "application/json")
+        .body(serialized)
+        .send()?;
+    Ok(res)
+}
+fn infura_req(st: &str) -> Result<reqwest::blocking::Response> {
+    let req = RpcRequest {
+        jsonrpc: String::from("2.0"),
+        method: String::from(st),
+        params: json!([]),
+        id: String::from("1"),
+    };
+
+    let serialized = match serde_json::to_string(&req) {
+        Ok(s) => s,
+        Err(e) => {
+            let msg = Rezzy{ message: format!("Error reading request: {:?}", e) };
+            msg.write_red();
+            String::from("")
+        },
+    };
+
+    let client = reqwest::blocking::Client::new();
+    let res = client.post("https://mainnet.infura.io/v3/65daaf22efb6473e8b56161095669ca8")
         .header("Content-Type", "application/json")
         .body(serialized)
         .send()?;
@@ -139,9 +164,25 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
             msg.write_red();
         }
     }
+    match infura_req("eth_blockNumber") {
+        Ok(r) => {
+            let inf: RpcResponse = r.json()?;
+            if let Some(infr) = inf.result {
+                if let Some(infb) = infr.as_str() {
+                    let msg = Rezzy{ message: format!("Valid8r can reach Infura at latest block: {:?}", i64::from_str_radix(infb.trim_start_matches("0x"), 16).unwrap()) };
+                    msg.write_green();
+                }
+            }       
+        },
+        Err(e) => {
+            let msg = Rezzy{ message: format!("VALID8R could not reach infura: {:?}", e) };
+            msg.write_red();
+        } 
+    };
 
     let res1 = eth_req("eth_blockNumber")?;
     let ji: RpcResponse = res1.json()?;
+
 
     let res5 = eth_req("eth_syncing")?;
     let r5 = res5.status();
