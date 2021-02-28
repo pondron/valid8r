@@ -169,7 +169,7 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
             let inf: RpcResponse = r.json()?;
             if let Some(infr) = inf.result {
                 if let Some(infb) = infr.as_str() {
-                    let msg = Rezzy{ message: format!("Valid8r can reach Infura at latest block: {:?}", i64::from_str_radix(infb.trim_start_matches("0x"), 16).unwrap()) };
+                    let msg = Rezzy{ message: format!("Valid8r can reach Infura at latest block: {:?}(verify at https://etherscan.io/blocks)", i64::from_str_radix(infb.trim_start_matches("0x"), 16).unwrap()) };
                     msg.write_green();
                 }
             }       
