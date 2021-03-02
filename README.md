@@ -8,24 +8,26 @@ valid8r is a tool to ensure Ethereum 2.0 validator set-up integrity to give peac
 
 ## Installation
 
-Download latest release from releases page:[Releases](https://github.com/pondron/valid8r/releases)
+Download latest release from releases page: [Releases](https://github.com/pondron/valid8r/releases)
+
 Currently supported - MacOS, Linux
 
 untar 
 ```
 $ tar -xzvf <PATH-TO-VALID8R>/valid8r-<version>-<arch>-<os>.tar.gz -C /usr/local/bin
 ```
-ensure version and valid8r is in path
+ensure valid8r executable
 ```
-$ valid8r --version
 // if permission denied try ($ sudo chmod 755 /usr/local/bin/valid8r)
+// if valid8r can't be found ensure /usr/local/bin is in path ($ echo $PATH)
+$ valid8r --version
 ```
 
 ## `valid8r` usage
 
-Valid8r takes two flags to parse the Eth1 Client and Eth2 Client deployed on the local machine. (**CURRENTLY ONLY VALI8ING MAINNET**)
+Valid8r takes two flags for parsing the Eth1 Client and Eth2 Client deployed on the local machine. (**CURRENTLY ONLY VALID8ING MAINNET**)
 
-example
+example:
 ```
 // valid8r -1 <eth1client> -2 <eth2client>
 $ valid8r -1 geth -2 lighthouse
@@ -34,7 +36,7 @@ $ valid8r -1 geth -2 lighthouse
 $ valid8r --eth1 geth --eth2 lighthouse 
 ```
 
-help/usage
+help/usage:
 ```
 $ valid8r --help 
 ```
@@ -48,8 +50,8 @@ $ valid8r --help
 | nethermind     |
 | openethereum   |
 
-## Functionality(https://launchpad.ethereum.org/checklist)
-For proper functionality of valid8r please ensure client specific flags related to *--JsonRpc.Enabled* are enabled:
+## Functionality: https://launchpad.ethereum.org/checklist
+For proper functionality of valid8r please ensure client specific flags related to *--JsonRpc.Enabled* are enabled
 
 **system requirements**
 - ntp vs local time sync
