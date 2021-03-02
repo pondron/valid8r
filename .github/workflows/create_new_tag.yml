@@ -1,4 +1,4 @@
-name: Publishfdsa
+name: Publish
 
 on:
   push:

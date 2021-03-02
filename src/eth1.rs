@@ -44,7 +44,7 @@ fn eth_req(st: &str) -> Result<reqwest::blocking::Response> {
     };
 
     let client = reqwest::blocking::Client::new();
-    let res = client.post("http://0.0.0.0:8545")
+    let res = client.post("http://127.0.0.1:8545")
         .header("Content-Type", "application/json")
         .body(serialized)
         .send()?;
