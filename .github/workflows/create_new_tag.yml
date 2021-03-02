@@ -46,7 +46,7 @@ jobs:
       - name: cd to release
         run: cd target/release/
       - name: 'Tar files'
-        run: tar -czvf ${{ matrix.asset_name }} valid8r
+        run: tar -czvf ${{ matrix.asset_name }} ./valid8r
       - name: Upload tar to release
         uses: svenstaro/upload-release-action@v1-release
         with:
