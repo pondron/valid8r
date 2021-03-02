@@ -39,12 +39,12 @@ jobs:
             artifact_name: valid8r
             asset_name: valid8r
     steps:
-      - name: 'Tar files'
-        run: tar -czvf valid8r-0.1.0${{ matrix.os }}.tar.gz /target/release
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Build project
         run: cargo build --release --locked
+      - name: 'Tar files'
+        run: tar -czvf valid8r-0.1.0${{ matrix.os }}.tar.gz /target/release
       - name: 'Upload Artifact'
         uses: actions/upload-artifact@v2
         with:
