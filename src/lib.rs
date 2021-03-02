@@ -91,19 +91,19 @@ impl Valid8r {
             }
             Eth1Client::BESU => {
                 if let Err(_e) = eth1_check("BESU") {
-                    let msg = Rezzy{ message: format!("VALID8R ERROR cound not connect to BESU") };
+                    let msg = Rezzy{ message: format!("VALID8R ERROR could not connect to BESU") };
                     msg.write_red();
                 }
             },
             Eth1Client::NETHERMIND => {
                 if let Err(_e) = eth1_check("NETHERMIND") {
-                    let msg = Rezzy{ message: format!("VALID8R ERROR cound not connect to NETHERMIND") };
+                    let msg = Rezzy{ message: format!("VALID8R ERROR could not connect to NETHERMIND") };
                     msg.write_red();
                 }
             },
             Eth1Client::OPENETHEREUM => {
                 if let Err(_e) = eth1_check("OPENETHEREUM") {
-                    let msg = Rezzy{ message: format!("VALID8R ERROR cound not connect to OPENETHEREUM") };
+                    let msg = Rezzy{ message: format!("VALID8R ERROR could not connect to OPENETHEREUM") };
                     msg.write_red();
                 }
             },
@@ -137,7 +137,7 @@ impl Valid8r {
                 }
                 match TcpListener::bind("127.0.0.1:8545") {
                     Ok(_) => {
-                        let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING ON PORT: 8545", self.eth1) };
+                        let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING for JSON RPC on PORT: 8545", self.eth1) };
                         msg.write_red();
                     },
                     Err(e) => {
