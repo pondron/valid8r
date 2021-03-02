@@ -40,7 +40,7 @@ jobs:
             asset_name: valid8r
     steps:
       - name: 'Tar files'
-        run: tar -czvf valid8r-0.1.0${{ matix.os }}.tar.gz /target/release
+        run: tar -czvf valid8r-0.1.0${{ matrix.os }}.tar.gz /target/release
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Build project
