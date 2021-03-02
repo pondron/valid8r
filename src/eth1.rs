@@ -50,6 +50,7 @@ fn eth_req(st: &str) -> Result<reqwest::blocking::Response> {
         .send()?;
     Ok(res)
 }
+
 fn infura_req(st: &str) -> Result<reqwest::blocking::Response> {
     let req = RpcRequest {
         jsonrpc: String::from("2.0"),
@@ -68,14 +69,14 @@ fn infura_req(st: &str) -> Result<reqwest::blocking::Response> {
     };
 
     let client = reqwest::blocking::Client::new();
-    let res = client.post("https://mainnet.infura.io/v3/65daaf22efb6473e8b56161095669ca8")
+    let res = client.post(INFURA)
         .header("Content-Type", "application/json")
         .body(serialized)
         .send()?;
     Ok(res)
 }
 
-fn git_req(mut repo: &str) -> Result<String> {
+fn git_req(repo: &str) -> Result<String> {
     let client = reqwest::blocking::Client::new();
     let res = client.get(repo)
         .header("User-Agent", "request")
