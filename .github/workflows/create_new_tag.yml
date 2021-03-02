@@ -51,4 +51,4 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: valid8r-0.1.0${{ matrix.os }}.tar.gz
           asset_name: ${{ matrix.asset_name }}
-          tag: "v0.3.0"
+          tag: ${{ steps.bump_version.outputs.new_tag }}
