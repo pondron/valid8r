@@ -18,7 +18,7 @@ jobs:
           - os: macos-latest
             artifact_name: leis-municipais
             asset_name: leis-municipais-macos-amd64
-    steps:
+    steps: 
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Build project
