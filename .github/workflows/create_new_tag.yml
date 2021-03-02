@@ -44,11 +44,11 @@ jobs:
       - name: Build project
         run: cargo build --release --locked
       - name: 'Tar files'
-        run: tar -czvf valid8r-0.1.0${{ matrix.os }}.tar.gz target/release
+        run: tar -czvf valid8r-0.1.0${{ matrix.os }}.tar.gz target/release/valid8r
       - name: Upload tar to release
         uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: valid8r-0.1.0${{ matrix.os }}.tar.gz
           asset_name: ${{ matrix.asset_name }}
-          tag: ${{ steps.bump_version.outputs.new_tag }}
+          tag: v0.4.0
