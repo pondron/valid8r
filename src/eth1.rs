@@ -44,7 +44,7 @@ fn eth_req(st: &str) -> Result<reqwest::blocking::Response> {
     };
 
     let client = reqwest::blocking::Client::new();
-    let res = client.post("http://0.0.0.0:8545")
+    let res = client.post("http://127.0.0.1:8545")
         .header("Content-Type", "application/json")
         .body(serialized)
         .send()?;
@@ -137,7 +137,7 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
             };
         }
         _ => {
-            let msg = Rezzy{ message: format!("unable to get peer count from {}", eth1) };
+            let msg = Rezzy{ message: format!("Could not get the latest release version from: {}", eth1) };
             msg.write_red();
         }
     }
@@ -160,7 +160,7 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
             }
         }
         _ => {
-            let msg = Rezzy{ message: format!("unable to get peer count from {}", eth1) };
+            let msg = Rezzy{ message: format!("Unable to get environment from {}", eth1) };
             msg.write_red();
         }
     }
@@ -227,7 +227,7 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
                                 let msg = Rezzy{ message: format!("{} currently has {:?} peers", eth1, val)  };
                                 msg.write_green();
                             } else {
-                                let msg = Rezzy{ message: format!("{} does NOT have enough peers({})", eth1, val) };
+                                let msg = Rezzy{ message: format!("{} does NOT have enough peers(Current:{})", eth1, val) };
                                 msg.write_red();
                             }
                         }
