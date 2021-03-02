@@ -49,6 +49,6 @@ jobs:
         uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: valid8r-0.1.0${{ matrix.os }}.tar.gz
+          file: ${{ matrix.asset_name}}
           asset_name: ${{ matrix.asset_name }}
           tag: v0.5.0
