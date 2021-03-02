@@ -33,11 +33,11 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            artifact_name: valid8r-v0.2.0-x86_64-linux-gnu.tar.gz
-            asset_name: valid8r-v0.2.0-x86_64-linux-gnu.tar.gz
+            artifact_name: valid8r-v0.4.0-x86_64-linux-gnu.tar.gz
+            asset_name: valid8r-v0.4.0-x86_64-linux-gnu.tar.gz
           - os: macos-latest
-            artifact_name: valid8r-v0.2.0-x86_64-apple-darwin.tar.gz
-            asset_name: valid8r-v0.2.0-x86_64-apple-darwin.tar.gz
+            artifact_name: valid8r-v0.4.0-x86_64-apple-darwin.tar.gz
+            asset_name: valid8r-v0.4.0-x86_64-apple-darwin.tar.gz
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -51,4 +51,4 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ matrix.asset_name }}
           asset_name: ${{ matrix.asset_name }}
-          tag: v0.2.0
+          tag: v0.4.0
