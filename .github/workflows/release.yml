@@ -1,4 +1,4 @@
-name: Publish
+name: Publish Release
 
 on:
   push:
@@ -33,20 +33,22 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            artifact_name: valid8r
-            asset_name: valid8r-x86_64-linux
+            artifact_name: valid8r-v0.1.0-x86_64-linux-gnu.tar.gz
+            asset_name: valid8r-v0.1.0-x86_64-linux-gnu.tar.gz
           - os: macos-latest
-            artifact_name: valid8r
-            asset_name: valid8r-x86_64-macos
+            artifact_name: valid8r-v0.1.0-x86_64-apple-darwin.tar.gz
+            asset_name: valid8r-v0.1.0-x86_64-apple-darwin.tar.gz
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Build project
         run: cargo build --release --locked
-      - name: Upload binary to release
+      - name: 'Tar files'
+        run: tar -C target/release/ -czvf ${{ matrix.asset_name }} valid8r
+      - name: Upload tar to release
         uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: target/release/${{ matrix.artifact_name }}
+          file: ${{ matrix.asset_name }}
           asset_name: ${{ matrix.asset_name }}
-          tag: "0.14.0"
+          tag: v0.1.0
