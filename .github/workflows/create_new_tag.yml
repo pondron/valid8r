@@ -44,10 +44,7 @@ jobs:
       - name: Build project
         run: cargo build --release --locked
       - name: 'Tar files'
-        run: |
-          cd target/release
-          tar -czvf ${{ matrix.asset_name }} valid8r
-          cd ../../
+        run: tar -czvf ${{ matrix.asset_name }} valid8r
       - name: Upload tar to release
         uses: svenstaro/upload-release-action@v1-release
         with:
