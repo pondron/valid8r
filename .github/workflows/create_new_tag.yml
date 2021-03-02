@@ -34,10 +34,10 @@ jobs:
         include:
           - os: ubuntu-latest
             artifact_name: valid8r
-            asset_name: valid8r-x86_64-linux
+            asset_name: valid8r
           - os: macos-latest
             artifact_name: valid8r
-            asset_name: valid8r-x86_64-macos
+            asset_name: valid8r
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -47,7 +47,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: my-artifact
-          path: ./valid8r-x86_64-linux
+          path: target/release/valid8r
           retention-days: 5  
 
 
