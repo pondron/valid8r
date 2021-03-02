@@ -12,11 +12,11 @@ Download latest release from releases page: [Releases](https://github.com/pondro
 
 Currently supported - MacOS, Linux
 
-untar 
+untar:
 ```
 $ tar -xzvf <PATH-TO-VALID8R>/valid8r-<version>-<arch>-<os>.tar.gz -C /usr/local/bin
 ```
-ensure valid8r executable
+ensure valid8r executable:
 ```
 // if permission denied try ($ sudo chmod 755 /usr/local/bin/valid8r)
 // if valid8r can't be found ensure /usr/local/bin is in path ($ echo $PATH)
