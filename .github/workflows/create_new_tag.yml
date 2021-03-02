@@ -45,19 +45,10 @@ jobs:
         run: cargo build --release --locked
       - name: 'Tar files'
         run: tar -czvf valid8r-0.1.0${{ matrix.os }}.tar.gz target/release
-      - name: 'Upload Artifact'
-        uses: actions/upload-artifact@v2
+      - name: Upload tar to release
+        uses: svenstaro/upload-release-action@v1-release
         with:
-          name: my-artifact
-          path: target/release/valid8r
-          retention-days: 5  
-
-
-
-      # - name: Upload binary to release
-      #   uses: svenstaro/upload-release-action@v1-release
-      #   with:
-      #     repo_token: ${{ secrets.GITHUB_TOKEN }}
-      #     file: target/release/${{ matrix.artifact_name }}
-      #     asset_name: ${{ matrix.asset_name }}
-      #     tag: "v0.3.0"
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: valid8r-0.1.0${{ matrix.os }}.tar.gz
+          asset_name: ${{ matrix.asset_name }}
+          tag: "v0.3.0"
