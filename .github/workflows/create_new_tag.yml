@@ -52,4 +52,4 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ matrix.asset_name }}
           asset_name: ${{ matrix.asset_name }}
-          tag: v0.7.0
+          tag: ${{ steps.bump_version.outputs.new_tag }}
