@@ -34,10 +34,10 @@ jobs:
         include:
           - os: ubuntu-latest
             artifact_name: valid8r
-            asset_name: valid8r-x86_64-linux
+            asset_name: valid8r-x86_64-linux.tar.gz
           - os: macos-latest
             artifact_name: valid8r
-            asset_name: valid8r-x86_64-macos
+            asset_name: valid8r-x86_64-macos.tar.gz
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
