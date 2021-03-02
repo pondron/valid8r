@@ -15,21 +15,21 @@ changes from upstream to provide a point for integration.
 ## `valid8r` usage
 
 ```
---config 
+--help 
 ```
 
 ## Ethereum Client Support
 
-| Client         | Version |
-| -------------- | ------- |
-| geth           |         |
-| besu           |         |
-| nethermind     |         |
-| openethereum   |         |
-| lighthouse     |         |
-| prysm          |         |
-| teku           |         |
-| nimbus         |         |
+| Client         |
+| -------------- |
+| geth           |
+| besu           |
+| nethermind     |
+| openethereum   |
+| lighthouse     |
+| prysm          |
+| teku           |
+| nimbus         |
 
 ## OS Support
 
