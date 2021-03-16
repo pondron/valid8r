@@ -116,25 +116,25 @@ impl Valid8r {
         match self.eth2 {
             Eth2Client::LIGHTHOUSE => {
                 if let Err(_e) = eth2_check("LIGHTHOUSE") {
-                    let msg = Rezzy{ message: format!("VALID8R could not connect to GETH") };
+                    let msg = Rezzy{ message: format!("VALID8R could not connect to LIGHTHOUSE") };
                     msg.write_red();
                 }
             }
             Eth2Client::PRYSM => {
                 if let Err(_e) = eth2_check("PRYSM") {
-                    let msg = Rezzy{ message: format!("VALID8R ERROR could not connect to BESU") };
+                    let msg = Rezzy{ message: format!("VALID8R ERROR could not connect to PRYSM") };
                     msg.write_red();
                 }
             },
             Eth2Client::NIMBUS => {
                 if let Err(_e) = eth2_check("NIMBUS") {
-                    let msg = Rezzy{ message: format!("VALID8R ERROR could not connect to NETHERMIND") };
+                    let msg = Rezzy{ message: format!("VALID8R ERROR could not connect to NIMBUS") };
                     msg.write_red();
                 }
             },
             Eth2Client::TEKU => {
                 if let Err(_e) = eth2_check("TEKU") {
-                    let msg = Rezzy{ message: format!("VALID8R ERROR could not connect to OPENETHEREUM") };
+                    let msg = Rezzy{ message: format!("VALID8R ERROR could not connect to TEKU") };
                     msg.write_red();
                 }
             },
