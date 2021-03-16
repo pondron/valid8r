@@ -5,10 +5,13 @@ use std::error::{Error as Err};
 use structopt::StructOpt;
 use chrono::prelude::*;
 use output::Rezzy;
+// use local_ipaddress;
 use eth1::*;
+use eth2::*;
 
 mod output;
 mod eth1;
+mod eth2;
 
 #[derive(StructOpt)]
 pub struct Config {
@@ -110,6 +113,34 @@ impl Valid8r {
             _ => println!("can't happen")
         }
 
+        match self.eth2 {
+            Eth2Client::LIGHTHOUSE => {
+                if let Err(_e) = eth2_check("LIGHTHOUSE") {
+                    let msg = Rezzy{ message: format!("VALID8R could not connect to GETH") };
+                    msg.write_red();
+                }
+            }
+            Eth2Client::PRYSM => {
+                if let Err(_e) = eth2_check("PRYSM") {
+                    let msg = Rezzy{ message: format!("VALID8R ERROR could not connect to BESU") };
+                    msg.write_red();
+                }
+            },
+            Eth2Client::NIMBUS => {
+                if let Err(_e) = eth2_check("NIMBUS") {
+                    let msg = Rezzy{ message: format!("VALID8R ERROR could not connect to NETHERMIND") };
+                    msg.write_red();
+                }
+            },
+            Eth2Client::TEKU => {
+                if let Err(_e) = eth2_check("TEKU") {
+                    let msg = Rezzy{ message: format!("VALID8R ERROR could not connect to OPENETHEREUM") };
+                    msg.write_red();
+                }
+            },
+            _ => println!("can't happen")
+        }
+
         println!("\n");
         //println!("\nETH2 Requirements: {:?}", self.eth2);
 
@@ -118,6 +149,7 @@ impl Valid8r {
     pub fn net_req(&self) {
         let banner = Rezzy{ message: format!("\nNetwork Requirements:") };
         banner.bold();
+        // println!("{}", local_ipaddress::get().unwrap());
         match self.eth1 {
             _ => {
                 match TcpListener::bind("127.0.0.1:30303") {
@@ -171,22 +203,40 @@ impl Valid8r {
                 }   
             }
             Eth2Client::PRYSM => {
-                match TcpListener::bind("127.0.0.1:13000") {
+                match TcpListener::bind("127.0.0.1:4000") {
                     Ok(_) => {
-                        let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING ON PORT: 13000", self.eth2) };
+                        let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING ON PORT: 4000", self.eth2) };
                         msg.write_red();
                     },
                     Err(e) => {
                         if e.kind() == ErrorKind::AddrInUse {
-                            let msg = Rezzy{ message: format!("{:?} is listening on port: 13000", self.eth2) };
+                            let msg = Rezzy{ message: format!("{:?} is listening on port: 4000", self.eth2) };
                             msg.write_green();
                         } else {
-                            let msg = Rezzy{ message: format!("{:?} misc error when listening on 13000", e) };
+                            let msg = Rezzy{ message: format!("{:?} misc error when listening on 4000", e) };
                             msg.write_yellow();
                         }
                     }
                 }   
             }
+            // Eth2Client::PRYSM => {
+            //     let local_ip = format!("{}{}", local_ipaddress::get().unwrap(), ":13000");
+            //     match TcpListener::bind(local_ip) {
+            //         Ok(_) => {
+            //             let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING ON PORT: 13000", self.eth2) };
+            //             msg.write_red();
+            //         },
+            //         Err(e) => {
+            //             if e.kind() == ErrorKind::AddrInUse {
+            //                 let msg = Rezzy{ message: format!("{:?} is listening on port: 13000", self.eth2) };
+            //                 msg.write_green();
+            //             } else {
+            //                 let msg = Rezzy{ message: format!("{:?} misc error when listening on 13000", e) };
+            //                 msg.write_yellow();
+            //             }
+            //         }
+            //     }
+            // }   
             _ => {
                 // figure out a better way of handling this,
             }
