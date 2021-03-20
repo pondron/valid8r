@@ -180,7 +180,7 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
                 msg.write_green();
             }
             else {
-                let msg = Rezzy{ message: format!("{} is NOT currently syncd", eth2) };
+                let msg = Rezzy{ message: format!("{} is NOT currently synced", eth2) };
                 msg.write_red();
             }
         },
