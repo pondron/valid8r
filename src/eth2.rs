@@ -6,8 +6,8 @@ use crate::output::Rezzy;
 
 static LIGHTHOUSE_GIT: &str = "https://api.github.com/repos/sigp/lighthouse/releases/latest";
 static PRYSM_GIT: &str = "https://api.github.com/repos/prysmaticlabs/prysm/releases/latest";
-static NIMBUS_GIT: &str = "https://api.github.com/repos/nethermindeth/nethermind/releases/latest";
-static TEKU_GIT: &str = "https://api.github.com/repos/openethereum/openethereum/releases/latest";
+static NIMBUS_GIT: &str = "https://api.github.com/repos/status-im/nimbus-eth2/releases/latest";
+static TEKU_GIT: &str = "https://api.github.com/repos/ConsenSys/teku/releases/latest";
 
 #[derive(Serialize, Deserialize, Debug)]
 struct RpcRequest {
@@ -24,7 +24,6 @@ struct RpcResponse {
     error: Option<serde_json::Value>,
     result: Option<serde_json::Value>,
 }
-
 
 fn eth_req(st: &str) -> Result<reqwest::blocking::Response> {
     let req = RpcRequest {
@@ -77,8 +76,64 @@ fn git_req(repo: &str) -> Result<String> {
     Ok(String::from(x))
 }
 
+fn eth2_sync_check() -> Result<bool> {
+
+    let client = reqwest::blocking::Client::new();
+    let res = client.get("http://127.0.0.1:3500/eth/v1alpha1/node/syncing")
+        .header("User-Agent", "request")
+        .send()?
+        .text()?;
+
+    let j: serde_json::Value = match serde_json::from_str(res.as_str()) {
+        Ok(s) => s,
+        Err(e) => {
+            let msg = Rezzy{ message: format!("Error reading request: {:?}", e) };
+            msg.write_red();
+            json![""]
+        },
+    };
+
+    let mut x = true;
+    match j["syncing"].as_bool() {
+        Some(v) => x = v,
+        None => {
+            let msg = Rezzy{ message: format!("Could not get syncing status of ETH2 validator") };
+            msg.write_red();
+        },
+    }
+    Ok(x)
+}
+
+fn eth2_peer_count() -> Result<usize> {
+
+    let client = reqwest::blocking::Client::new();
+    let res = client.get("http://127.0.0.1:3500/eth/v1alpha1/node/peers")
+        .header("User-Agent", "request")
+        .send()?
+        .text()?;
+
+    let j: serde_json::Value = match serde_json::from_str(res.as_str()) {
+        Ok(s) => s,
+        Err(e) => {
+            let msg = Rezzy{ message: format!("Error reading request: {:?}", e) };
+            msg.write_red();
+            json![""]
+        },
+    };
+
+    let mut x = 0;
+    match Option::Some(j["peers"].as_array().unwrap().len()) {
+        Some(v) => x = v,
+        None => {
+            let msg = Rezzy{ message: format!("Could not get peer count of ETH2 validator") };
+            msg.write_red();
+        },
+    }
+    Ok(x)
+}
+
 pub fn eth2_check(eth2: &str) -> Result<()> {
-    let banner = Rezzy{ message: format!("\neth2 Client Check: {}", eth2) };
+    let banner = Rezzy{ message: format!("\nETH2 Client Check: {}", eth2) };
     banner.bold();
 
     let res4 = eth_req("web3_clientVersion")?;
@@ -118,5 +173,35 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
         }
     }
 
+    match eth2_sync_check(){
+        Ok(r) => {
+            if r {
+                let msg = Rezzy{ message: format!("{} is currently synced!", eth2) };
+                msg.write_green();
+            }
+            else {
+                let msg = Rezzy{ message: format!("{} is NOT currently syncd", eth2) };
+                msg.write_red();
+            }
+        },
+        Err(e) => {
+            println!("{}", e)
+        }
+    };
+    
+    match eth2_peer_count(){
+        Ok(r) => {
+            if r > 50 {
+                let msg = Rezzy{ message: format!("{} currently has {:?} peers", eth2, r)  };
+                msg.write_green();
+            } else {
+                let msg = Rezzy{ message: format!("{} does NOT have enough peers(Current:{})", eth2, r) };
+                msg.write_red();
+            }
+        },
+        Err(e) => {
+            println!("{}", e)
+        }
+    };
     Ok(())
 }
