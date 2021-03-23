@@ -9,13 +9,8 @@ static PRYSM_GIT: &str = "https://api.github.com/repos/prysmaticlabs/prysm/relea
 static NIMBUS_GIT: &str = "https://api.github.com/repos/status-im/nimbus-eth2/releases/latest";
 static TEKU_GIT: &str = "https://api.github.com/repos/ConsenSys/teku/releases/latest";
 
-#[derive(Serialize, Deserialize, Debug)]
-struct RpcRequest {
-    jsonrpc: String,
-    method: String,
-    params: serde_json::Value,
-    id: String,
-}
+static ETH2_CLIENT_ADDR: &str = "http://127.0.0.1:5052";
+static ETH2_CLIENT_ADDR_PRYSM: &str = "http://127.0.0.1:3500";
 
 #[derive(Serialize, Deserialize, Debug)]
 struct RpcResponse {
@@ -25,28 +20,12 @@ struct RpcResponse {
     result: Option<serde_json::Value>,
 }
 
-fn eth_req(st: &str) -> Result<reqwest::blocking::Response> {
-    let req = RpcRequest {
-        jsonrpc: String::from("2.0"),
-        method: String::from(st),
-        params: json!([]),
-        id: String::from("1"),
-    };
-
-    let serialized = match serde_json::to_string(&req) {
-        Ok(s) => s,
-        Err(e) => {
-            let msg = Rezzy{ message: format!("Error reading request: {:?}", e) };
-            msg.write_red();
-            String::from("")
-        },
-    };
-
+fn eth2_req(endpoint: &str) -> Result<reqwest::blocking::Response> {
     let client = reqwest::blocking::Client::new();
-    let res = client.post("http://127.0.0.1:8545")
+    let res = client.get(endpoint)
         .header("Content-Type", "application/json")
-        .body(serialized)
-        .send()?;
+        .send()?
+        .text()?;
     Ok(res)
 }
 
@@ -76,14 +55,9 @@ fn git_req(repo: &str) -> Result<String> {
     Ok(String::from(x))
 }
 
-fn eth2_sync_check() -> Result<bool> {
-
-    let client = reqwest::blocking::Client::new();
-    let res = client.get("http://127.0.0.1:3500/eth/v1alpha1/node/syncing")
-        .header("User-Agent", "request")
-        .send()?
-        .text()?;
-
+fn eth2_sync_check(endpoint: &str) -> Result<bool> {
+    let res = eth2_req(endpoint);
+    //let res = client.get("http://127.0.0.1:3500/eth/v1alpha1/node/syncing")
     let j: serde_json::Value = match serde_json::from_str(res.as_str()) {
         Ok(s) => s,
         Err(e) => {
@@ -104,13 +78,9 @@ fn eth2_sync_check() -> Result<bool> {
     Ok(x)
 }
 
-fn eth2_peer_count() -> Result<usize> {
-
-    let client = reqwest::blocking::Client::new();
-    let res = client.get("http://127.0.0.1:3500/eth/v1alpha1/node/peers")
-        .header("User-Agent", "request")
-        .send()?
-        .text()?;
+fn eth2_peer_count(endpoint: &str) -> Result<usize> {
+    let res = eth2_req(endpoint);
+    //let res = client.get("http://127.0.0.1:3500/eth/v1alpha1/node/peers")
 
     let j: serde_json::Value = match serde_json::from_str(res.as_str()) {
         Ok(s) => s,
@@ -136,7 +106,12 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
     let banner = Rezzy{ message: format!("\nETH2 Client Check: {}", eth2) };
     banner.bold();
 
-    let res4 = eth_req("web3_clientVersion")?;
+    let base_path = match eth2 {
+        "PRYSM" => ETH2_CLIENT_ADDR_PRYSM,
+        _ => ETH2_CLIENT_ADDR,
+    }
+
+    let res4 = eth2_req(format!("{}/eth/v1/node/version", base_path))?;
     let r4 = res4.status();
 
     match r4 {
@@ -173,7 +148,7 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
         }
     }
 
-    match eth2_sync_check(){
+    match eth2_sync_check(format!("{}/eth/v1/node/syncing", base_path)){
         Ok(r) => {
             if r {
                 let msg = Rezzy{ message: format!("{} is currently synced!", eth2) };
@@ -189,7 +164,7 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
         }
     };
     
-    match eth2_peer_count(){
+    match eth2_peer_count(format!("{}/eth/v1/node/peers", base_path)){
         Ok(r) => {
             if r > 50 {
                 let msg = Rezzy{ message: format!("{} currently has {:?} peers", eth2, r)  };
