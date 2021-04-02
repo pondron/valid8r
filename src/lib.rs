@@ -149,7 +149,7 @@ impl Valid8r {
         banner.bold();
         match self.eth1 {
             _ => {
-                match TcpListener::bind("127.0.0.1:30303") {
+                match TcpListener::bind("0.0.0.0:30303") {
                     Ok(_) => {
                         let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING ON PORT: 30303", self.eth1) };
                         msg.write_red();
@@ -183,7 +183,7 @@ impl Valid8r {
         }
         match self.eth2 {
             Eth2Client::LIGHTHOUSE | Eth2Client::NIMBUS | Eth2Client::TEKU => {
-                match TcpListener::bind("127.0.0.1:9000") {
+                match TcpListener::bind("0.0.0.0:9000") {
                     Ok(_) => {
                         let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING ON PORT: 9000", self.eth2) };
                         msg.write_red();
@@ -200,7 +200,7 @@ impl Valid8r {
                 }   
             }
             Eth2Client::PRYSM => {
-                match TcpListener::bind("127.0.0.1:4000") {
+                match TcpListener::bind("0.0.0.0:4000") {
                     Ok(_) => {
                         let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING ON PORT: 4000", self.eth2) };
                         msg.write_red();
