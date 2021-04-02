@@ -176,12 +176,12 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
     
     match eth2_peer_count(format!("{}/eth/v1/node/peer_count", base_path).as_str()){
         Ok(r) => {
-            if r > 50 {
+            if r > 10 {
                 let msg = Rezzy{ message: format!("{} currently has {:?} peers", eth2, r)  };
                 msg.write_green();
             } else {
-                let msg = Rezzy{ message: format!("{} does NOT have enough peers(Current:{})", eth2, r) };
-                msg.write_red();
+                let msg = Rezzy{ message: format!("{} has low peer count: peers(Current:{})", eth2, r) };
+                msg.write_yellow();
             }
         },
         Err(e) => {

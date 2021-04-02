@@ -228,8 +228,8 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
                                 let msg = Rezzy{ message: format!("{} currently has {:?} peers", eth1, val)  };
                                 msg.write_green();
                             } else {
-                                let msg = Rezzy{ message: format!("{} does NOT have enough peers(Current:{})", eth1, val) };
-                                msg.write_red();
+                                let msg = Rezzy{ message: format!("{} has low peer count: peers(Current:{})", eth1, val) };
+                                msg.write_yellow();
                             }
                         }
                     }
