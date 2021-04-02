@@ -11,6 +11,7 @@ static TEKU_GIT: &str = "https://api.github.com/repos/ConsenSys/teku/releases/la
 
 static ETH2_CLIENT_ADDR: &str = "http://127.0.0.1:5052";
 static ETH2_CLIENT_ADDR_PRYSM: &str = "http://127.0.0.1:3500";
+static ETH2_CLIENT_ADDR_NIMBUS: &str = "http://127.0.0.1:9190";
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Eth2Response {
@@ -159,51 +160,146 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
 
     let base_path = match eth2 {
         "PRYSM" => ETH2_CLIENT_ADDR_PRYSM,
+        "NIMBUS" => ETH2_CLIENT_ADDR_NIMBUS,
         _ => ETH2_CLIENT_ADDR,
     };
 
-    let res4 = eth2_req(format!("{}/eth/v1/node/version", base_path).as_str())?;
-    let r4 = res4.status();
 
-    match r4 {
-        reqwest::StatusCode::OK => {
-            let j: Eth2Response = res4.json()?;
-            let ver = parse_ver(&j)?;
-
-            let mut repo = LIGHTHOUSE_GIT;
-            match eth2 {
-                "PRYSM" => repo = PRYSM_GIT,
-                "NIMBUS" => repo = NIMBUS_GIT,
-                "TEKU" => repo = TEKU_GIT,
-                _ => (),
-            }
-
-            match git_req(repo){
-                Ok(r) => {
-                    if ver.contains(&r.as_str()) {
-                        let msg = Rezzy{ message: format!("{}({}) is the latest release: {:?}", eth2, &ver, &r)  };
-                        msg.write_green();
-                    } else {
-                        let msg = Rezzy{ message: format!("{} needs to be updated to latest release: {}", eth2, &r) };
-                        msg.write_red();
-                    }
-                },
-                Err(e) => {
-                    let msg = Rezzy{ message: format!("{} error fetching git release: {:?}", eth2, e) };
-                    msg.write_red();
-                }
-            };
-        }
-        _ => {
-            let msg = Rezzy{ message: format!("Could not get the latest release version from: {}", eth2) };
-            msg.write_red();
-        }
-    }
     match eth2 {
         "NIMBUS" => {
+            let res4 = eth_rpc_req("get_v1_node_version");
+            let r4 = res4.status();
+        
+            match r4 {
+                reqwest::StatusCode::OK => {
+                    let j: Eth2Response = res4.json()?;
+                    let ver = parse_ver(&j)?;
+                    let repo = PRYSM_GIT;
+
+                    match git_req(repo){
+                        Ok(r) => {
+                            if ver.contains(&r.as_str()) {
+                                let msg = Rezzy{ message: format!("{}({}) is the latest release: {:?}", eth2, &ver, &r)  };
+                                msg.write_green();
+                            } else {
+                                let msg = Rezzy{ message: format!("{} needs to be updated to latest release: {}", eth2, &r) };
+                                msg.write_red();
+                            }
+                        },
+                        Err(e) => {
+                            let msg = Rezzy{ message: format!("{} error fetching git release: {:?}", eth2, e) };
+                            msg.write_red();
+                        }
+                    };
+                }
+                _ => {
+                    let msg = Rezzy{ message: format!("Could not get the latest release version from: {}", eth2) };
+                    msg.write_red();
+                }
+            }
+
+            // let res5 = eth_rpc_req("getSyncing")?;
+            // let r5 = res5.status();
+        
+            // match r5 {
+            //     reqwest::StatusCode::OK => {
+            //         let j: RpcResponse = res5.json()?;
+            //         println!("{:?}", j.result)
+            //         match j.result {
+            //             Some(r) => {
+            //                 if let Some(re) = r.as_bool() {
+            //                     if !re {
+            //                         let msg = Rezzy{ message: format!("{} is in sync, latest block: {:?}(verify at https://etherscan.io/blocks)", eth2, i64::from_str_radix(ji.result.unwrap().as_str().unwrap().trim_start_matches("0x"), 16).unwrap())  };
+            //                         msg.write_green();
+            //                     }
+            //                 } else {
+            //                     let msg = Rezzy{ message: format!("{} is NOT currently synced", eth2) };
+            //                     msg.write_red();
+            //                 }
+            //             },
+            //             None => {
+            //                 let msg = Rezzy{ message: format!("{} -> VALID8R communication error", eth2) };
+            //                 msg.write_red();
+            //             },
+            //         }
+            //     }
+            //     _ => {
+            //         let msg = Rezzy{ message: format!("unable to get block status from {}", eth2) };
+            //         msg.write_red();
+            //     }
+            // }
+
             
+
+            // let res2 = eth_rpc_req("get_v1_node_peer_count")?;
+            // let r2 = res2.status();
+        
+            // match r2 {
+            //     reqwest::StatusCode::OK => {
+            //         let j: RpcResponse = res2.json()?;
+            //         match j.result {
+            //             Some(re) => {
+            //                 if let Some(st) = re.as_str() {
+            //                     if let Ok(val) = i64::from_str_radix(st.trim_start_matches("0x"), 16) {
+            //                         if val > 16 {
+            //                             let msg = Rezzy{ message: format!("{} currently has {:?} peers", eth1, val)  };
+            //                             msg.write_green();
+            //                         } else {
+            //                             let msg = Rezzy{ message: format!("{} has low peer count: peers(Current:{})", eth1, val) };
+            //                             msg.write_yellow();
+            //                         }
+            //                     }
+            //                 }
+            //             },
+            //             None => {
+            //                 let msg = Rezzy{ message: format!("unable to get peer count from {}", eth1) };
+            //                 msg.write_red();
+            //             },
+            //         }
+            //     }
+            //     _ => {
+            //         let msg = Rezzy{ message: format!("unable to get peer count from {}", eth1) };
+            //         msg.write_red();
+            //     }
+            // }
         }
         _ => {
+            let res4 = eth2_req(format!("{}/eth/v1/node/version", base_path).as_str())?;
+            let r4 = res4.status();
+        
+            match r4 {
+                reqwest::StatusCode::OK => {
+                    let j: Eth2Response = res4.json()?;
+                    let ver = parse_ver(&j)?;
+        
+                    let mut repo = LIGHTHOUSE_GIT;
+                    match eth2 {
+                        "PRYSM" => repo = PRYSM_GIT,
+                        "TEKU" => repo = TEKU_GIT,
+                        _ => (),
+                    }
+        
+                    match git_req(repo){
+                        Ok(r) => {
+                            if ver.contains(&r.as_str()) {
+                                let msg = Rezzy{ message: format!("{}({}) is the latest release: {:?}", eth2, &ver, &r)  };
+                                msg.write_green();
+                            } else {
+                                let msg = Rezzy{ message: format!("{} needs to be updated to latest release: {}", eth2, &r) };
+                                msg.write_red();
+                            }
+                        },
+                        Err(e) => {
+                            let msg = Rezzy{ message: format!("{} error fetching git release: {:?}", eth2, e) };
+                            msg.write_red();
+                        }
+                    };
+                }
+                _ => {
+                    let msg = Rezzy{ message: format!("Could not get the latest release version from: {}", eth2) };
+                    msg.write_red();
+                }
+            }
 
             match eth2_sync_check(format!("{}/eth/v1/node/syncing", base_path).as_str()) {
                 Ok(r) => {
