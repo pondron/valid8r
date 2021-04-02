@@ -5,7 +5,6 @@ use std::error::{Error as Err};
 use structopt::StructOpt;
 use chrono::prelude::*;
 use output::Rezzy;
-// use local_ipaddress;
 use eth1::*;
 use eth2::*;
 
@@ -142,14 +141,12 @@ impl Valid8r {
         }
 
         println!("\n");
-        //println!("\nETH2 Requirements: {:?}", self.eth2);
-
+        
         Ok(())
     }
     pub fn net_req(&self) {
         let banner = Rezzy{ message: format!("\nNetwork Requirements:") };
         banner.bold();
-        // println!("{}", local_ipaddress::get().unwrap());
         match self.eth1 {
             _ => {
                 match TcpListener::bind("127.0.0.1:30303") {
@@ -218,25 +215,7 @@ impl Valid8r {
                         }
                     }
                 }   
-            }
-            // Eth2Client::PRYSM => {
-            //     let local_ip = format!("{}{}", local_ipaddress::get().unwrap(), ":13000");
-            //     match TcpListener::bind(local_ip) {
-            //         Ok(_) => {
-            //             let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING ON PORT: 13000", self.eth2) };
-            //             msg.write_red();
-            //         },
-            //         Err(e) => {
-            //             if e.kind() == ErrorKind::AddrInUse {
-            //                 let msg = Rezzy{ message: format!("{:?} is listening on port: 13000", self.eth2) };
-            //                 msg.write_green();
-            //             } else {
-            //                 let msg = Rezzy{ message: format!("{:?} misc error when listening on 13000", e) };
-            //                 msg.write_yellow();
-            //             }
-            //         }
-            //     }
-            // }   
+            } 
             _ => {
                 // figure out a better way of handling this,
             }
