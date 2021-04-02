@@ -288,7 +288,7 @@ impl Valid8r {
     
         // check num processors
         let proc = sys.get_processors().len();
-        if proc > 4 {
+        if proc >= 4 {
             let msg = Rezzy{ message: format!("Processor count requirement reached: \n\t Preferred 4 CPU(s)(min 2) => Have {} CPU(s)", proc) };
             msg.write_green();
         } else if proc < 4 && proc > 2 {
