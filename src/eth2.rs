@@ -17,12 +17,53 @@ struct Eth2Response {
     data: Option<serde_json::Value>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+struct RpcRequest {
+    jsonrpc: String,
+    method: String,
+    params: serde_json::Value,
+    id: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct RpcResponse {
+    id: String,
+    jsonrpc: String,
+    error: Option<serde_json::Value>,
+    result: Option<serde_json::Value>,
+}
+
 fn eth2_req(endpoint: &str) -> Result<reqwest::blocking::Response> {
     let client = reqwest::blocking::Client::new();
     let res = client.get(endpoint)
         .header("Content-Type", "application/json")
         .send()?;
 
+    Ok(res)
+}
+
+fn eth_rpc_req(st: &str) -> Result<reqwest::blocking::Response> {
+    let req = RpcRequest {
+        jsonrpc: String::from("2.0"),
+        method: String::from(st),
+        params: json!([]),
+        id: String::from("1"),
+    };
+
+    let serialized = match serde_json::to_string(&req) {
+        Ok(s) => s,
+        Err(e) => {
+            let msg = Rezzy{ message: format!("Error reading request: {:?}", e) };
+            msg.write_red();
+            String::from("")
+        },
+    };
+
+    let client = reqwest::blocking::Client::new();
+    let res = client.post("http://127.0.0.1:8545")
+        .header("Content-Type", "application/json")
+        .body(serialized)
+        .send()?;
     Ok(res)
 }
 
