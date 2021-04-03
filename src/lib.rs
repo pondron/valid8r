@@ -230,7 +230,7 @@ impl Valid8r {
                     let msg = Rezzy{ message: format!("{:?} security best practices recommend moving the standard ssh port", self.eth1) };
                     msg.write_red();
                 } else if e.kind()  == ErrorKind::PermissionDenied {
-                    let msg = Rezzy{ message: format!("Could not access privilaged port 22. Either run me as root user or run `sudo netstat -lpnut | grep ssh` to ensure ssh is not running on the standard port") };
+                    let msg = Rezzy{ message: format!("Could not access default ssh port 22(run as root)") };
                     msg.write_yellow();
                 } else {
                     let msg = Rezzy{ message: format!("{:?} misc error when listening on 22", e) };
