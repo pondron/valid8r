@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 extern crate reqwest;
 use serde::{Serialize, Deserialize};
 use serde_json::json;
