@@ -2,6 +2,7 @@ extern crate reqwest;
 use serde::{Serialize, Deserialize};
 use serde_json::json;
 use reqwest::*;
+use anyhow::Result;
 use crate::output::Rezzy;
 
 static LIGHTHOUSE_GIT: &str = "https://api.github.com/repos/sigp/lighthouse/releases/latest";
@@ -53,61 +54,68 @@ fn git_req(repo: &str) -> Result<String> {
 }
 
 fn eth2_sync_check(endpoint: &str) -> Result<bool> {
-    let res = eth2_req(endpoint);
+    let res = eth2_req(endpoint)?;
     //let res = client.get("http://127.0.0.1:3500/eth/v1alpha1/node/syncing")
-    let pay: Eth2Response = res.unwrap().json()?;
-    let j = pay.data.unwrap();
+    let pay: Eth2Response = res.json()?;
 
     let mut x = true;
-    match j["is_syncing"].as_bool() {
-        Some(v) => {
-            if v {
-                let val: usize = j["sync_distance"].as_str().unwrap().parse().unwrap();
-                let msg = Rezzy{ message: format!("Sync Distance: {:?}", val) };
+    if let Some(j) = pay.data{
+        match j["is_syncing"].as_bool() {
+            Some(v) => {
+                if v {
+                    if let Some(re) = j["sync_distance"].as_str() {
+                        let val: usize = re.parse()?;
+                        let msg = Rezzy{ message: format!("Sync Distance: {:?}", val) };
+                        msg.write_red();
+                    }
+                }
+                x = v;
+            },
+            None => {
+                let msg = Rezzy{ message: format!("Could not get syncing status of ETH2 validator") };
                 msg.write_red();
-            }
-            x = v;
-        },
-        None => {
-            let msg = Rezzy{ message: format!("Could not get syncing status of ETH2 validator") };
-            msg.write_red();
-        },
-    }
+            },
+        }
+    };
 
     Ok(x)
 }
 
 fn eth2_peer_count(endpoint: &str) -> Result<usize> {
-    let res = eth2_req(endpoint);
+    let res = eth2_req(endpoint)?;
     //let res = client.get("http://127.0.0.1:3500/eth/v1alpha1/node/peers")
 
-    let pay: Eth2Response = res.unwrap().json()?;
-    let j = pay.data.unwrap();
-
+    let pay: Eth2Response = res.json()?;
     let mut x = 0;
-    match j["connected"].as_str() {
-        Some(v) => {
-            let val: usize = v.parse().unwrap();
-            x = val
-        },
-        None => {
-            let msg = Rezzy{ message: format!("Could not get peer count of ETH2 validator") };
-            msg.write_red();
-        },
+
+    if let Some(j) = pay.data {
+        match j["connected"].as_str() {
+            Some(v) => {
+                let val: usize = v.parse()?;
+                x = val
+            },
+            None => {
+                let msg = Rezzy{ message: format!("Could not get peer count of ETH2 validator") };
+                msg.write_red();
+            },
+        }
     }
+
     Ok(x)
 }
 fn parse_ver(pay: &Eth2Response) -> Result<String> {
-    let j = pay.data.as_ref().unwrap();
-
     let mut x = "";
-    match j["version"].as_str() {
-        Some(v) => x = v,
-        None => {
-            let msg = Rezzy{ message: format!("Could not pull client release version") };
-            msg.write_red();
-        },
-    }
+
+    if let Some(j) = pay.data.as_ref() {
+        match j["version"].as_str() {
+            Some(v) => x = v,
+            None => {
+                let msg = Rezzy{ message: format!("Could not pull client release version") };
+                msg.write_red();
+            },
+        }
+    };
+
     Ok(String::from(x))
 }
 
