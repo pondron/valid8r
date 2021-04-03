@@ -34,15 +34,6 @@ struct RpcResponse {
     result: Option<serde_json::Value>,
 }
 
-fn eth2_req(endpoint: &str) -> Result<reqwest::blocking::Response> {
-    let client = reqwest::blocking::Client::new();
-    let res = client.get(endpoint)
-        .header("Content-Type", "application/json")
-        .send()?;
-
-    Ok(res)
-}
-
 fn eth_rpc_req(st: &str) -> Result<reqwest::blocking::Response> {
     let req = RpcRequest {
         jsonrpc: String::from("2.0"),
@@ -61,10 +52,19 @@ fn eth_rpc_req(st: &str) -> Result<reqwest::blocking::Response> {
     };
 
     let client = reqwest::blocking::Client::new();
-    let res = client.post("http://127.0.0.1:8545")
+    let res = client.post("http://127.0.0.1:9091")
         .header("Content-Type", "application/json")
         .body(serialized)
         .send()?;
+    Ok(res)
+}
+
+fn eth2_req(endpoint: &str) -> Result<reqwest::blocking::Response> {
+    let client = reqwest::blocking::Client::new();
+    let res = client.get(endpoint)
+        .header("Content-Type", "application/json")
+        .send()?;
+
     Ok(res)
 }
 
@@ -172,7 +172,7 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
         
             match r4 {
                 reqwest::StatusCode::OK => {
-                    let j: Eth2Response = res4.json()?;
+                    let j = res4.json()?;
                     let ver = parse_ver(&j)?;
                     let repo = PRYSM_GIT;
 
@@ -242,23 +242,23 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
             //                 if let Some(st) = re.as_str() {
             //                     if let Ok(val) = i64::from_str_radix(st.trim_start_matches("0x"), 16) {
             //                         if val > 16 {
-            //                             let msg = Rezzy{ message: format!("{} currently has {:?} peers", eth1, val)  };
+            //                             let msg = Rezzy{ message: format!("{} currently has {:?} peers", eth2, val)  };
             //                             msg.write_green();
             //                         } else {
-            //                             let msg = Rezzy{ message: format!("{} has low peer count: peers(Current:{})", eth1, val) };
+            //                             let msg = Rezzy{ message: format!("{} has low peer count: peers(Current:{})", eth2, val) };
             //                             msg.write_yellow();
             //                         }
             //                     }
             //                 }
             //             },
             //             None => {
-            //                 let msg = Rezzy{ message: format!("unable to get peer count from {}", eth1) };
+            //                 let msg = Rezzy{ message: format!("unable to get peer count from {}", eth2) };
             //                 msg.write_red();
             //             },
             //         }
             //     }
             //     _ => {
-            //         let msg = Rezzy{ message: format!("unable to get peer count from {}", eth1) };
+            //         let msg = Rezzy{ message: format!("unable to get peer count from {}", eth2) };
             //         msg.write_red();
             //     }
             // }
@@ -270,7 +270,7 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
             match r4 {
                 reqwest::StatusCode::OK => {
                     let j: Eth2Response = res4.json()?;
-                    let ver = parse_ver(&j)?;
+                    let ver = String::from(j.result.unwrap().as_str().unwrap());
         
                     let mut repo = LIGHTHOUSE_GIT;
                     match eth2 {
