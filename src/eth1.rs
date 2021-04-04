@@ -199,8 +199,10 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
                             msg.write_green();
                         }
                     } else {
-                        let msg = Rezzy{ message: format!("{} is NOT currently synced", eth1) };
-                        msg.write_red();
+                        if let Ok(val) = i64::from_str_radix(r["currentBlock"].as_str().unwrap().trim_start_matches("0x"), 16) {
+                            let msg = Rezzy{ message: format!("{} is NOT currently synced: {:?}", eth1, val) };
+                            msg.write_red();
+                        }
                     }
                 },
                 None => {
