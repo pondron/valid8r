@@ -1,10 +1,9 @@
-#[allow(unused_imports)]
 extern crate reqwest;
 use serde::{Serialize, Deserialize};
 use serde_json::json;
-use reqwest::*;
 use anyhow::Result;
 use crate::output::Rezzy;
+use crate::eth1::{eth_req, RpcResponse};
 
 static LIGHTHOUSE_GIT: &str = "https://api.github.com/repos/sigp/lighthouse/releases/latest";
 static PRYSM_GIT: &str = "https://api.github.com/repos/prysmaticlabs/prysm/releases/latest";
@@ -13,52 +12,11 @@ static TEKU_GIT: &str = "https://api.github.com/repos/ConsenSys/teku/releases/la
 
 static ETH2_CLIENT_ADDR: &str = "http://127.0.0.1:5052";
 static ETH2_CLIENT_ADDR_PRYSM: &str = "http://127.0.0.1:3500";
-static ETH2_CLIENT_ADDR_NIMBUS: &str = "http://127.0.0.1:9190";
+static ETH2_CLIENT_ADDR_NIMBUS: &str = "http://127.0.0.1:9091";
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Eth2Response {
     data: Option<serde_json::Value>,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct RpcRequest {
-    jsonrpc: String,
-    method: String,
-    params: serde_json::Value,
-    id: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct RpcResponse {
-    id: String,
-    jsonrpc: String,
-    error: Option<serde_json::Value>,
-    result: Option<serde_json::Value>,
-}
-
-fn eth_rpc_req(st: &str) -> Result<reqwest::blocking::Response> {
-    let req = RpcRequest {
-        jsonrpc: String::from("2.0"),
-        method: String::from(st),
-        params: json!([]),
-        id: String::from("1"),
-    };
-
-    let serialized = match serde_json::to_string(&req) {
-        Ok(s) => s,
-        Err(e) => {
-            let msg = Rezzy{ message: format!("Error reading request: {:?}", e) };
-            msg.write_red();
-            String::from("")
-        },
-    };
-
-    let client = reqwest::blocking::Client::new();
-    let res = client.post("http://127.0.0.1:9091")
-        .header("Content-Type", "application/json")
-        .body(serialized)
-        .send()?;
-    Ok(res)
 }
 
 fn eth2_req(endpoint: &str) -> Result<reqwest::blocking::Response> {
@@ -98,9 +56,9 @@ fn git_req(repo: &str) -> Result<String> {
 
 fn eth2_sync_check(endpoint: &str) -> Result<bool> {
     let res = eth2_req(endpoint)?;
-    //let res = client.get("http://127.0.0.1:3500/eth/v1alpha1/node/syncing")
     let pay: Eth2Response = res.json()?;
     let mut x = true;
+
     if let Some(j) = pay.data{
         match j["is_syncing"].as_bool() {
             Some(v) => {
@@ -191,7 +149,7 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
 
     match eth2 {
         "NIMBUS" => {
-            let res4 = eth_rpc_req("getNodeVersion").unwrap();
+            let res4 = eth_req("getNodeVersion", ETH2_CLIENT_ADDR_NIMBUS)?;
             let r4 = res4.status();
         
             match r4 {
@@ -227,7 +185,7 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
                 }
             }
 
-            let res5 = eth_rpc_req("getSyncing")?;
+            let res5 = eth_req("getSyncing", ETH2_CLIENT_ADDR_NIMBUS)?;
             let r5 = res5.status();
         
             match r5 {
@@ -257,7 +215,7 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
                 }
             }
 
-            let res2 = eth_rpc_req("get_v1_node_peer_count")?;
+            let res2 = eth_req("get_v1_node_peer_count", ETH2_CLIENT_ADDR_NIMBUS)?;
             let r2 = res2.status();
         
             match r2 {
@@ -290,7 +248,7 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
             }
         }
         _ => {
-            let mut version = "";
+            let version;
             if eth2 == "PRYSM" {
                 version = "v1alpha1"
             } else {
@@ -349,7 +307,7 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
                 }
             };
             
-            let mut peers = "";
+            let peers;
             if eth2 == "PRYSM" {
                 peers = "peers"
             } else {
