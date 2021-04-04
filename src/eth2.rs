@@ -100,7 +100,6 @@ fn eth2_sync_check(endpoint: &str) -> Result<bool> {
     let res = eth2_req(endpoint)?;
     //let res = client.get("http://127.0.0.1:3500/eth/v1alpha1/node/syncing")
     let pay: Eth2Response = res.json()?;
-    println!("paypay{:?}", pay);
     let mut x = true;
     if let Some(j) = pay.data{
         match j["is_syncing"].as_bool() {
@@ -139,10 +138,7 @@ fn eth2_peer_count(endpoint: &str, eth2: &str) -> Result<usize> {
             },
         };
         match Option::Some(k["peers"].as_array().unwrap().len()) {
-            Some(v) => {
-                println!("vvvv{}", v);
-                x = v
-            },
+            Some(v) => x = v,
             None => {
                 let msg = Rezzy{ message: format!("Could not get peer count of ETH2 validator") };
                 msg.write_red();
@@ -300,7 +296,6 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
             } else {
                 version = "v1"
             }
-            println!("{}", version);
             let res = eth2_req(format!("{}/eth/{}/node/version", base_path, version).as_str())?;
             let r = res.status();
         
