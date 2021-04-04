@@ -241,7 +241,7 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
                         Some(r) => {
                             if let Some(re) = r.as_bool() {
                                 if !re {
-                                    let msg = Rezzy{ message: format!("{} is in sync, latest block: (verify at https://etherscan.io/blocks)", eth2)};
+                                    let msg = Rezzy{ message: format!("{} is in sync (verify at https://etherscan.io/blocks)", eth2)};
                                     msg.write_green();
                                 }
                             } else {
