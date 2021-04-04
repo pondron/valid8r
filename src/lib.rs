@@ -71,10 +71,7 @@ impl Valid8r {
 
         v
     }
-    pub fn run(&self) -> Result<(), Box<dyn Err>> {
-        // TODO: 
-        //  - remove all unwraps and provide helpful errors
-    
+    pub fn run(&self) -> Result<(), Box<dyn Err>> {    
         let banner = Rezzy{ message: format!("Valid8r is Valid8ing your Valid8r") };
         banner.bold();
 
@@ -82,8 +79,6 @@ impl Valid8r {
 
         self.net_req();
 
-        // can we talk to infura
-        // are we synced w/ the latest block
         match self.eth1 {
             Eth1Client::GETH => {
                 if let Err(_e) = eth1_check("GETH") {
@@ -230,7 +225,7 @@ impl Valid8r {
                     let msg = Rezzy{ message: format!("{:?} security best practices recommend moving the standard ssh port", self.eth1) };
                     msg.write_red();
                 } else if e.kind()  == ErrorKind::PermissionDenied {
-                    let msg = Rezzy{ message: format!("Could not access privilaged port 22. Either run me as root user or run `sudo netstat -lpnut | grep ssh` to ensure ssh is not running on the standard port") };
+                    let msg = Rezzy{ message: format!("Could not access default ssh port 22(run as root)") };
                     msg.write_yellow();
                 } else {
                     let msg = Rezzy{ message: format!("{:?} misc error when listening on 22", e) };
@@ -242,35 +237,60 @@ impl Valid8r {
     pub fn sys_req(&self) {
         let banner = Rezzy{ message: format!("\nSystem Requirements:") };
         banner.bold();
-        let response: ntp::packet::Packet = ntp::request("0.pool.ntp.org:123").unwrap();
-        let ntp_time = response.transmit_time;
-        let loc = Local::now();
-        println!("Time Sync - NTP {} vs LOCAL {:?}", ntp_time, loc.time());
+        match ntp::request("0.pool.ntp.org:123") {
+            Ok(val) => {
+                let ntp_time = val.transmit_time;
+                let loc = Local::now();
+                println!("Time Sync - NTP {} vs LOCAL {:?}", ntp_time, loc.time());
+            },
+            Err(_) => {
+                let msg = Rezzy{ message: format!("Could not get NTP time") };
+                msg.write_red();
+            },
+        };
+
 
         let sys = System::new_all();
     
-        let os = sys.get_name().unwrap().to_lowercase();
+        let os = match sys.get_name(){
+            Some(val) => val.to_lowercase(),
+            None => return,
+        };
         // check os ver
         if os.eq("ubuntu") {
             let lts = "20.04";
-            let cur = sys.get_os_version().unwrap();
-            if cur.eq(lts) {
-                let msg = Rezzy{ message: format!("OS Version up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
-                msg.write_green();
-            } else {
-                let msg = Rezzy{ message: format!("OS Version NOT up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
-                msg.write_red();
-            }
+            match sys.get_os_version() {
+                Some(cur) => {
+                    if cur.eq(lts) {
+                        let msg = Rezzy{ message: format!("OS Version up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
+                        msg.write_green();
+                    } else {
+                        let msg = Rezzy{ message: format!("OS Version NOT up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
+                        msg.write_red();
+                    }
+                },
+                None => {
+                    let msg = Rezzy{ message: format!("Could not get OS Version") };
+                    msg.write_red();
+                },
+            };
         } else if os.eq("darwin") {
             let lts = "11.2.1";
-            let cur = sys.get_os_version().unwrap();
-            if cur.eq("11.2.1") {
-                let msg = Rezzy{ message: format!("OS Version up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
-                msg.write_green();
-            } else {
-                let msg = Rezzy{ message: format!("OS Version NOT up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
-                msg.write_red();
-            }
+            match sys.get_os_version() {
+                Some(cur) => {
+                    if cur.eq("11.2.1") {
+                        let msg = Rezzy{ message: format!("OS Version up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
+                        msg.write_green();
+                    } else {
+                        let msg = Rezzy{ message: format!("OS Version NOT up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
+                        msg.write_red();
+                    }
+                },
+                None => {
+                    let msg = Rezzy{ message: format!("Could not get OS Version") };
+                    msg.write_red(); 
+                }
+            };
         }
     
         // check sys memory

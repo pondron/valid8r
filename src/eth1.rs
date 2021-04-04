@@ -1,7 +1,9 @@
+#[allow(unused_imports)]
 extern crate reqwest;
 use serde::{Serialize, Deserialize};
 use serde_json::json;
 use reqwest::*;
+use anyhow::Result;
 use crate::output::Rezzy;
 
 static GETH_GIT: &str = "https://api.github.com/repos/ethereum/go-ethereum/releases/latest";
@@ -112,7 +114,12 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
     match r4 {
         reqwest::StatusCode::OK => {
             let j: RpcResponse = res4.json()?;
-            let ver = String::from(j.result.unwrap().as_str().unwrap());
+            let mut ver = String::from("");
+            if let Some(re) = j.result {
+                if let Some(v) = re.as_str() {
+                    ver = String::from(v);
+                }
+            }
             let mut repo = GETH_GIT;
             match eth1 {
                 "BESU" => repo = BESU_GIT,
@@ -170,7 +177,7 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
             let inf: RpcResponse = r.json()?;
             if let Some(infr) = inf.result {
                 if let Some(infb) = infr.as_str() {
-                    let msg = Rezzy{ message: format!("Valid8r can reach Infura at latest block: {:?}(verify at https://etherscan.io/blocks)", i64::from_str_radix(infb.trim_start_matches("0x"), 16).unwrap()) };
+                    let msg = Rezzy{ message: format!("Valid8r can reach Infura at latest block: {:?}(verify at https://etherscan.io/blocks)", i64::from_str_radix(infb.trim_start_matches("0x"), 16)?) };
                     msg.write_green();
                 }
             }       
@@ -195,12 +202,21 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
                 Some(r) => {
                     if let Some(re) = r.as_bool() {
                         if !re {
-                            let msg = Rezzy{ message: format!("{} is in sync, latest block: {:?}(verify at https://etherscan.io/blocks)", eth1, i64::from_str_radix(ji.result.unwrap().as_str().unwrap().trim_start_matches("0x"), 16).unwrap())  };
-                            msg.write_green();
+                            if let Some(re) = ji.result {
+                                if let Some(val) = re.as_str() {
+                                    let msg = Rezzy{ message: format!("{} is in sync, latest block: {:?}(verify at https://etherscan.io/blocks)", eth1, i64::from_str_radix(val.trim_start_matches("0x"), 16)?)  };
+                                    msg.write_green();
+                                }
+                            } else {
+                                let msg = Rezzy{ message: format!("Could not parse sync data") };
+                                msg.write_red();
+                            }
                         }
                     } else {
-                        let msg = Rezzy{ message: format!("{} is NOT currently synced", eth1) };
-                        msg.write_red();
+                        if let Ok(val) = i64::from_str_radix(r["currentBlock"].as_str().unwrap().trim_start_matches("0x"), 16) {
+                            let msg = Rezzy{ message: format!("{} is NOT currently synced: {:?}", eth1, val) };
+                            msg.write_red();
+                        }
                     }
                 },
                 None => {
