@@ -167,7 +167,7 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
 
     match eth2 {
         "NIMBUS" => {
-            let res4 = eth_rpc_req("get_v1_node_version");
+            let res4 = eth_rpc_req("get_v1_node_version").unwrap();
             let r4 = res4.status();
         
             match r4 {
@@ -264,12 +264,12 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
             // }
         }
         _ => {
-            let res4 = eth2_req(format!("{}/eth/v1/node/version", base_path).as_str())?;
-            let r4 = res4.status();
+            let res = eth2_req(format!("{}/eth/v1/node/version", base_path).as_str())?;
+            let r = res.status();
         
-            match r4 {
+            match r {
                 reqwest::StatusCode::OK => {
-                    let j: Eth2Response = res4.json()?;
+                    let j: Eth2Response = res.json()?;
                     let ver = String::from(j.result.unwrap().as_str().unwrap());
         
                     let mut repo = LIGHTHOUSE_GIT;
