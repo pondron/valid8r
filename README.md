@@ -4,7 +4,7 @@ An open-source command line interface for linting your Ethereum 2.0 validator se
 
 ## Overview
 
-valid8r is a tool to ensure Ethereum 2.0 validator set-up integrity to give peace of mind to the implementer and more importantly ensure the network runs smoothly. valid8r will acts as a linting tool and reads out to the implementer what system settings are correct, what systems settings need to be changed, and what system settings do not follow best practices.
+valid8r is a tool to ensure Ethereum 2.0 validator set-up integrity to give peace of mind to the implementer and more importantly ensure the network runs smoothly. valid8r acts as a linting tool and reads out to the implementer what system settings are correct, what systems settings need to be changed, and what system settings do not follow best practices.
 
 ## Installation
 
