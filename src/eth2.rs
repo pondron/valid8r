@@ -349,7 +349,6 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
             match r {
                 reqwest::StatusCode::OK => {
                     let j: Eth2Response = res.json()?;
-                    println!("{:?}", j);
                     let ver = parse_ver(&j)?;
         
                     let mut repo = LIGHTHOUSE_GIT;
