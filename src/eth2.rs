@@ -81,40 +81,20 @@ fn eth2_sync_check(endpoint: &str) -> Result<bool> {
     Ok(x)
 }
 
-fn eth2_peer_count(endpoint: &str, eth2: &str) -> Result<usize> {
+fn eth2_peer_count(endpoint: &str) -> Result<usize> {
     let res = eth2_req(endpoint)?;
     let mut x = 0;
-
-    if eth2 == "PRYSM" {
-        let j = res.text()?;
-        let k: serde_json::Value = match serde_json::from_str(j.as_str()) {
-            Ok(s) => s,
-            Err(e) => {
-                let msg = Rezzy{ message: format!("Error reading request: {:?}", e) };
-                msg.write_red();
-                json![""]
+    let pay: Eth2Response = res.json()?;
+    if let Some(j) = pay.data {
+        match j["connected"].as_str() {
+            Some(v) => {
+                let val: usize = v.parse()?;
+                x = val
             },
-        };
-        match Option::Some(k["peers"].as_array().unwrap().len()) {
-            Some(v) => x = v,
             None => {
                 let msg = Rezzy{ message: format!("Could not get peer count of ETH2 validator") };
                 msg.write_red();
-            }
-        }
-    } else {
-        let pay: Eth2Response = res.json()?;
-        if let Some(j) = pay.data {
-            match j["connected"].as_str() {
-                Some(v) => {
-                    let val: usize = v.parse()?;
-                    x = val
-                },
-                None => {
-                    let msg = Rezzy{ message: format!("Could not get peer count of ETH2 validator") };
-                    msg.write_red();
-                },
-            }
+            },
         }
     }
     Ok(x)
@@ -247,19 +227,129 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
                 }
             }
         }
-        _ => {
-            let version;
-            if eth2 == "PRYSM" {
-                version = "v1alpha1"
-            } else {
-                version = "v1"
+        "PRYSM" => {
+            fn eth2_prysm_sync_check() -> Result<bool> {
+
+                let client = reqwest::blocking::Client::new();
+                let res = client.get("http://127.0.0.1:3500/eth/v1alpha1/node/syncing")
+                    .header("User-Agent", "request")
+                    .send()?
+                    .text()?;
+            
+                let j: serde_json::Value = match serde_json::from_str(res.as_str()) {
+                    Ok(s) => s,
+                    Err(e) => {
+                        let msg = Rezzy{ message: format!("Error reading request: {:?}", e) };
+                        msg.write_red();
+                        json![""]
+                    },
+                };
+            
+                let mut x = true;
+                match j["syncing"].as_bool() {
+                    Some(v) => x = v,
+                    None => {
+                        let msg = Rezzy{ message: format!("Could not get syncing status of ETH2 validator") };
+                        msg.write_red();
+                    },
+                }
+                Ok(x)
             }
-            let res = eth2_req(format!("{}/eth/{}/node/version", base_path, version).as_str())?;
+
+            fn eth2_prysm_peer_count(endpoint: &str) -> Result<usize> {
+                let res = eth2_req(endpoint)?;
+                let mut x = 0;
+
+                let j = res.text()?;
+                let k: serde_json::Value = match serde_json::from_str(j.as_str()) {
+                    Ok(s) => s,
+                    Err(e) => {
+                        let msg = Rezzy{ message: format!("Error reading request: {:?}", e) };
+                        msg.write_red();
+                        json![""]
+                    },
+                };
+                match Option::Some(k["peers"].as_array().unwrap().len()) {
+                    Some(v) => x = v,
+                    None => {
+                        let msg = Rezzy{ message: format!("Could not get peer count of ETH2 validator") };
+                        msg.write_red();
+                    }
+                }
+                Ok(x)
+            }
+
+
+            let res = eth2_req(format!("{}/eth/v1alpha1/node/version", base_path).as_str())?;
+            let r = res.status();
+        
+            match r {
+                reqwest::StatusCode::OK => {
+                    let j: serde_json::Value = res.json()?;
+                    let ver = String::from(j["version"].as_str().unwrap()); 
+                    let repo = PRYSM_GIT;
+        
+                    match git_req(repo){
+                        Ok(r) => {
+                            if ver.contains(&r.as_str()) {
+                                let msg = Rezzy{ message: format!("{}({}) is the latest release: {:?}", eth2, &ver, &r)  };
+                                msg.write_green();
+                            } else {
+                                let msg = Rezzy{ message: format!("{} needs to be updated to latest release: {}", eth2, &r) };
+                                msg.write_red();
+                            }
+                        },
+                        Err(e) => {
+                            let msg = Rezzy{ message: format!("{} error fetching git release: {:?}", eth2, e) };
+                            msg.write_red();
+                        }
+                    };
+                }
+                _ => {
+                    let msg = Rezzy{ message: format!("Could not get the latest release version from: {}", eth2) };
+                    msg.write_red();
+                }
+            }
+
+            match eth2_prysm_sync_check() {
+                Ok(r) => {
+                    if !r {
+                        let msg = Rezzy{ message: format!("{} is currently synced!", eth2) };
+                        msg.write_green();
+                    }
+                    else {
+                        let msg = Rezzy{ message: format!("{} is NOT currently synced", eth2) };
+                        msg.write_red();
+                    }
+                },
+                Err(e) => {
+                    println!("{}", e)
+                }
+            };
+
+            match eth2_prysm_peer_count(format!("{}/eth/v1alpha1/node/peers", base_path).as_str()){
+                Ok(r) => {
+                    if r > 10 {
+                        let msg = Rezzy{ message: format!("{} currently has {:?} peers", eth2, r)  };
+                        msg.write_green();
+                    } else {
+                        let msg = Rezzy{ message: format!("{} has low peer count: peers(Current:{})", eth2, r) };
+                        msg.write_yellow();
+                    }
+                },
+                Err(e) => {
+                    println!("{}", e)
+                }
+            }
+        }
+        _ => {
+            let res = eth2_req(format!("{}/eth/v1/node/version", base_path).as_str())?;
             let r = res.status();
         
             match r {
                 reqwest::StatusCode::OK => {
                     let j: Eth2Response = res.json()?;
+                    println!("{:?}", j);
                     let ver = parse_ver(&j)?;
         
                     let mut repo = LIGHTHOUSE_GIT;
@@ -291,8 +381,9 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
                 }
             }
 
-            match eth2_sync_check(format!("{}/eth/{}/node/syncing", base_path, version).as_str()) {
+            match eth2_sync_check(format!("{}/eth/v1/node/syncing", base_path).as_str()) {
                 Ok(r) => {
+                    
                     if !r {
                         let msg = Rezzy{ message: format!("{} is currently synced!", eth2) };
                         msg.write_green();
@@ -306,15 +397,8 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
                     println!("{}", e)
                 }
             };
-            
-            let peers;
-            if eth2 == "PRYSM" {
-                peers = "peers"
-            } else {
-                peers = "peer_count"
-            }
 
-            match eth2_peer_count(format!("{}/eth/{}/node/{}", base_path, version, peers).as_str(), eth2){
+            match eth2_peer_count(format!("{}/eth/v1/node/peer_count", base_path).as_str()){
                 Ok(r) => {
                     if r > 10 {
                         let msg = Rezzy{ message: format!("{} currently has {:?} peers", eth2, r)  };
