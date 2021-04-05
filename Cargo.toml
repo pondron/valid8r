@@ -1,6 +1,6 @@
 [package]
 name = "valid8r"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["tclukies", "bgoebel"]
 edition = "2018"
 
