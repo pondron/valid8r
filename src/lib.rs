@@ -6,9 +6,11 @@ use structopt::StructOpt;
 use chrono::prelude::*;
 use output::Rezzy;
 use eth1::*;
+use eth2::*;
 
 mod output;
 mod eth1;
+mod eth2;
 
 #[derive(StructOpt)]
 pub struct Config {
@@ -69,10 +71,7 @@ impl Valid8r {
 
         v
     }
-    pub fn run(&self) -> Result<(), Box<dyn Err>> {
-        // TODO: 
-        //  - remove all unwraps and provide helpful errors
-    
+    pub fn run(&self) -> Result<(), Box<dyn Err>> {    
         let banner = Rezzy{ message: format!("Valid8r is Valid8ing your Valid8r") };
         banner.bold();
 
@@ -80,8 +79,6 @@ impl Valid8r {
 
         self.net_req();
 
-        // can we talk to infura
-        // are we synced w/ the latest block
         match self.eth1 {
             Eth1Client::GETH => {
                 if let Err(_e) = eth1_check("GETH") {
@@ -110,9 +107,36 @@ impl Valid8r {
             _ => println!("can't happen")
         }
 
-        println!("\n");
-        //println!("\nETH2 Requirements: {:?}", self.eth2);
+        match self.eth2 {
+            Eth2Client::LIGHTHOUSE => {
+                if let Err(_e) = eth2_check("LIGHTHOUSE") {
+                    let msg = Rezzy{ message: format!("VALID8R could not connect to LIGHTHOUSE") };
+                    msg.write_red();
+                }
+            }
+            Eth2Client::PRYSM => {
+                if let Err(_e) = eth2_check("PRYSM") {
+                    let msg = Rezzy{ message: format!("VALID8R ERROR could not connect to PRYSM") };
+                    msg.write_red();
+                }
+            },
+            Eth2Client::NIMBUS => {
+                if let Err(_e) = eth2_check("NIMBUS") {
+                    let msg = Rezzy{ message: format!("VALID8R ERROR could not connect to NIMBUS") };
+                    msg.write_red();
+                }
+            },
+            Eth2Client::TEKU => {
+                if let Err(_e) = eth2_check("TEKU") {
+                    let msg = Rezzy{ message: format!("VALID8R ERROR could not connect to TEKU") };
+                    msg.write_red();
+                }
+            },
+            _ => println!("can't happen")
+        }
 
+        println!("\n");
+        
         Ok(())
     }
     pub fn net_req(&self) {
@@ -120,7 +144,7 @@ impl Valid8r {
         banner.bold();
         match self.eth1 {
             _ => {
-                match TcpListener::bind("127.0.0.1:30303") {
+                match TcpListener::bind("0.0.0.0:30303") {
                     Ok(_) => {
                         let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING ON PORT: 30303", self.eth1) };
                         msg.write_red();
@@ -154,7 +178,7 @@ impl Valid8r {
         }
         match self.eth2 {
             Eth2Client::LIGHTHOUSE | Eth2Client::NIMBUS | Eth2Client::TEKU => {
-                match TcpListener::bind("127.0.0.1:9000") {
+                match TcpListener::bind("0.0.0.0:9000") {
                     Ok(_) => {
                         let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING ON PORT: 9000", self.eth2) };
                         msg.write_red();
@@ -171,22 +195,22 @@ impl Valid8r {
                 }   
             }
             Eth2Client::PRYSM => {
-                match TcpListener::bind("127.0.0.1:13000") {
+                match TcpListener::bind("0.0.0.0:4000") {
                     Ok(_) => {
-                        let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING ON PORT: 13000", self.eth2) };
+                        let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING ON PORT: 4000", self.eth2) };
                         msg.write_red();
                     },
                     Err(e) => {
                         if e.kind() == ErrorKind::AddrInUse {
-                            let msg = Rezzy{ message: format!("{:?} is listening on port: 13000", self.eth2) };
+                            let msg = Rezzy{ message: format!("{:?} is listening on port: 4000", self.eth2) };
                             msg.write_green();
                         } else {
-                            let msg = Rezzy{ message: format!("{:?} misc error when listening on 13000", e) };
+                            let msg = Rezzy{ message: format!("{:?} misc error when listening on 4000", e) };
                             msg.write_yellow();
                         }
                     }
                 }   
-            }
+            } 
             _ => {
                 // figure out a better way of handling this,
             }
@@ -201,7 +225,7 @@ impl Valid8r {
                     let msg = Rezzy{ message: format!("{:?} security best practices recommend moving the standard ssh port", self.eth1) };
                     msg.write_red();
                 } else if e.kind()  == ErrorKind::PermissionDenied {
-                    let msg = Rezzy{ message: format!("Could not access privilaged port 22. Either run me as root user or run `sudo netstat -lpnut | grep ssh` to ensure ssh is not running on the standard port") };
+                    let msg = Rezzy{ message: format!("Could not access default ssh port 22(run as root)") };
                     msg.write_yellow();
                 } else {
                     let msg = Rezzy{ message: format!("{:?} misc error when listening on 22", e) };
@@ -213,35 +237,60 @@ impl Valid8r {
     pub fn sys_req(&self) {
         let banner = Rezzy{ message: format!("\nSystem Requirements:") };
         banner.bold();
-        let response: ntp::packet::Packet = ntp::request("0.pool.ntp.org:123").unwrap();
-        let ntp_time = response.transmit_time;
-        let loc = Local::now();
-        println!("Time Sync - NTP {} vs LOCAL {:?}", ntp_time, loc.time());
+        match ntp::request("0.pool.ntp.org:123") {
+            Ok(val) => {
+                let ntp_time = val.transmit_time;
+                let loc = Local::now();
+                println!("Time Sync - NTP {} vs LOCAL {:?}", ntp_time, loc.time());
+            },
+            Err(_) => {
+                let msg = Rezzy{ message: format!("Could not get NTP time") };
+                msg.write_red();
+            },
+        };
+
 
         let sys = System::new_all();
     
-        let os = sys.get_name().unwrap().to_lowercase();
+        let os = match sys.get_name(){
+            Some(val) => val.to_lowercase(),
+            None => return,
+        };
         // check os ver
         if os.eq("ubuntu") {
             let lts = "20.04";
-            let cur = sys.get_os_version().unwrap();
-            if cur.eq(lts) {
-                let msg = Rezzy{ message: format!("OS Version up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
-                msg.write_green();
-            } else {
-                let msg = Rezzy{ message: format!("OS Version NOT up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
-                msg.write_red();
-            }
+            match sys.get_os_version() {
+                Some(cur) => {
+                    if cur.eq(lts) {
+                        let msg = Rezzy{ message: format!("OS Version up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
+                        msg.write_green();
+                    } else {
+                        let msg = Rezzy{ message: format!("OS Version NOT up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
+                        msg.write_red();
+                    }
+                },
+                None => {
+                    let msg = Rezzy{ message: format!("Could not get OS Version") };
+                    msg.write_red();
+                },
+            };
         } else if os.eq("darwin") {
             let lts = "11.2.1";
-            let cur = sys.get_os_version().unwrap();
-            if cur.eq("11.2.1") {
-                let msg = Rezzy{ message: format!("OS Version up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
-                msg.write_green();
-            } else {
-                let msg = Rezzy{ message: format!("OS Version NOT up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
-                msg.write_red();
-            }
+            match sys.get_os_version() {
+                Some(cur) => {
+                    if cur.eq("11.2.1") {
+                        let msg = Rezzy{ message: format!("OS Version up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
+                        msg.write_green();
+                    } else {
+                        let msg = Rezzy{ message: format!("OS Version NOT up-to-date with LTS: \n\t Requirement {:?} => Have ({:?} {:?})", lts, os, cur) };
+                        msg.write_red();
+                    }
+                },
+                None => {
+                    let msg = Rezzy{ message: format!("Could not get OS Version") };
+                    msg.write_red(); 
+                }
+            };
         }
     
         // check sys memory
@@ -259,7 +308,7 @@ impl Valid8r {
     
         // check num processors
         let proc = sys.get_processors().len();
-        if proc > 4 {
+        if proc >= 4 {
             let msg = Rezzy{ message: format!("Processor count requirement reached: \n\t Preferred 4 CPU(s)(min 2) => Have {} CPU(s)", proc) };
             msg.write_green();
         } else if proc < 4 && proc > 2 {

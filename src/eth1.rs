@@ -1,7 +1,7 @@
 extern crate reqwest;
 use serde::{Serialize, Deserialize};
 use serde_json::json;
-use reqwest::*;
+use anyhow::Result;
 use crate::output::Rezzy;
 
 static GETH_GIT: &str = "https://api.github.com/repos/ethereum/go-ethereum/releases/latest";
@@ -10,23 +10,25 @@ static NETHERMIND_GIT: &str = "https://api.github.com/repos/nethermindeth/nether
 static OPENETHEREUM_GIT: &str = "https://api.github.com/repos/openethereum/openethereum/releases/latest";
 static INFURA: &str = "https://mainnet.infura.io/v3/65daaf22efb6473e8b56161095669ca8";
 
+static ETH1_CLIENT_ADDR: &str = "http://127.0.0.1:8545";
+
 #[derive(Serialize, Deserialize, Debug)]
-struct RpcRequest {
-    jsonrpc: String,
-    method: String,
-    params: serde_json::Value,
-    id: String,
+pub struct RpcRequest {
+    pub jsonrpc: String,
+    pub method: String,
+    pub params: serde_json::Value,
+    pub id: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct RpcResponse {
-    id: String,
-    jsonrpc: String,
-    error: Option<serde_json::Value>,
-    result: Option<serde_json::Value>,
+pub struct RpcResponse {
+    pub id: String,
+    pub jsonrpc: String,
+    pub error: Option<serde_json::Value>,
+    pub result: Option<serde_json::Value>,
 }
 
-fn eth_req(st: &str) -> Result<reqwest::blocking::Response> {
+pub fn eth_req(st: &str, url: &str) -> Result<reqwest::blocking::Response> {
     let req = RpcRequest {
         jsonrpc: String::from("2.0"),
         method: String::from(st),
@@ -44,7 +46,7 @@ fn eth_req(st: &str) -> Result<reqwest::blocking::Response> {
     };
 
     let client = reqwest::blocking::Client::new();
-    let res = client.post("http://127.0.0.1:8545")
+    let res = client.post(url)
         .header("Content-Type", "application/json")
         .body(serialized)
         .send()?;
@@ -106,13 +108,18 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
     let banner = Rezzy{ message: format!("\nETH1 Client Check: {}", eth1) };
     banner.bold();
 
-    let res4 = eth_req("web3_clientVersion")?;
+    let res4 = eth_req("web3_clientVersion", ETH1_CLIENT_ADDR)?;
     let r4 = res4.status();
 
     match r4 {
         reqwest::StatusCode::OK => {
             let j: RpcResponse = res4.json()?;
-            let ver = String::from(j.result.unwrap().as_str().unwrap());
+            let mut ver = String::from("");
+            if let Some(re) = j.result {
+                if let Some(v) = re.as_str() {
+                    ver = String::from(v);
+                }
+            }
             let mut repo = GETH_GIT;
             match eth1 {
                 "BESU" => repo = BESU_GIT,
@@ -142,7 +149,7 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
             msg.write_red();
         }
     }
-    let res3 = eth_req("net_version")?;
+    let res3 = eth_req("net_version", ETH1_CLIENT_ADDR)?;
     let r3 = res3.status();
 
     match r3 {
@@ -170,7 +177,7 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
             let inf: RpcResponse = r.json()?;
             if let Some(infr) = inf.result {
                 if let Some(infb) = infr.as_str() {
-                    let msg = Rezzy{ message: format!("Valid8r can reach Infura at latest block: {:?}(verify at https://etherscan.io/blocks)", i64::from_str_radix(infb.trim_start_matches("0x"), 16).unwrap()) };
+                    let msg = Rezzy{ message: format!("Valid8r can reach Infura at latest block: {:?}(verify at https://etherscan.io/blocks)", i64::from_str_radix(infb.trim_start_matches("0x"), 16)?) };
                     msg.write_green();
                 }
             }       
@@ -181,11 +188,11 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
         } 
     };
 
-    let res1 = eth_req("eth_blockNumber")?;
+    let res1 = eth_req("eth_blockNumber", ETH1_CLIENT_ADDR)?;
     let ji: RpcResponse = res1.json()?;
 
 
-    let res5 = eth_req("eth_syncing")?;
+    let res5 = eth_req("eth_syncing", ETH1_CLIENT_ADDR)?;
     let r5 = res5.status();
 
     match r5 {
@@ -195,12 +202,21 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
                 Some(r) => {
                     if let Some(re) = r.as_bool() {
                         if !re {
-                            let msg = Rezzy{ message: format!("{} is in sync, latest block: {:?}(verify at https://etherscan.io/blocks)", eth1, i64::from_str_radix(ji.result.unwrap().as_str().unwrap().trim_start_matches("0x"), 16).unwrap())  };
-                            msg.write_green();
+                            if let Some(re) = ji.result {
+                                if let Some(val) = re.as_str() {
+                                    let msg = Rezzy{ message: format!("{} is in sync, latest block: {:?}(verify at https://etherscan.io/blocks)", eth1, i64::from_str_radix(val.trim_start_matches("0x"), 16)?)  };
+                                    msg.write_green();
+                                }
+                            } else {
+                                let msg = Rezzy{ message: format!("Could not parse sync data") };
+                                msg.write_red();
+                            }
                         }
                     } else {
-                        let msg = Rezzy{ message: format!("{} is NOT currently syncd", eth1) };
-                        msg.write_red();
+                        if let Ok(val) = i64::from_str_radix(r["currentBlock"].as_str().unwrap().trim_start_matches("0x"), 16) {
+                            let msg = Rezzy{ message: format!("{} is NOT currently synced: {:?}", eth1, val) };
+                            msg.write_red();
+                        }
                     }
                 },
                 None => {
@@ -214,7 +230,7 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
             msg.write_red();
         }
     }
-    let res2 = eth_req("net_peerCount")?;
+    let res2 = eth_req("net_peerCount", ETH1_CLIENT_ADDR)?;
     let r2 = res2.status();
 
     match r2 {
@@ -228,8 +244,8 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
                                 let msg = Rezzy{ message: format!("{} currently has {:?} peers", eth1, val)  };
                                 msg.write_green();
                             } else {
-                                let msg = Rezzy{ message: format!("{} does NOT have enough peers(Current:{})", eth1, val) };
-                                msg.write_red();
+                                let msg = Rezzy{ message: format!("{} has low peer count: peers(Current:{})", eth1, val) };
+                                msg.write_yellow();
                             }
                         }
                     }

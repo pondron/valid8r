@@ -49,17 +49,23 @@ $ valid8r --help
 | besu           |
 | nethermind     |
 | openethereum   |
+| lighthouse     |
+| teku           |
+| prysm          |
+| nimbus         |
 
 ## Functionality: https://launchpad.ethereum.org/checklist
-For proper functionality of valid8r please ensure client specific flags related to *--JsonRpc.Enabled* are enabled
+For proper functionality of valid8r please ensure client specific flags related to *--JsonRpc.Enabled* are enabled and ETH 2 client flags/configs are set as well *rest-api-port: 5052*
 
 **system requirements**
 - ntp vs local time sync
 - CPU/MEM/DISK capacity check
 
 **network requirements**
-- eth1 default ports 30303TCP/8545TCP
+- eth1 default ports 30303TCP
+- eth1 default api port 8545TCP
 - eth2 default ports 9000TCP(prysm 13000TCP)
+- eth2 default api ports 5052
 - if running as root check ssh agent is not running on port 22
 
 **eth1 client**
