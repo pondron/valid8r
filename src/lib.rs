@@ -39,15 +39,15 @@ pub struct Config {
     pub eth2_http_port: Option<i32>,
 
     // optional: testnet bool flag
-    #[structopt(short = "testnet", long)]
+    #[structopt(short = "t", long)]
     pub testnet: Option<String>,
 
     // optional: ntp endpoint 
-    #[structopt(short = "ntp", long)]
+    #[structopt(short = "n", long)]
     pub ntp_endpoint: Option<String>,
 
     // optional: infura endpoint
-    #[structopt(short = "infura", long)]
+    #[structopt(short = "i", long)]
     pub infura_endpoint: Option<String>,
 }
 
@@ -121,9 +121,13 @@ impl Valid8r {
             "prysm" => {
                 v.eth2 = Eth2Client::PRYSM;
                 v.eth2_listener_addr = String::from("0.0.0.0:4000");
+                v.eth2_http_addr = String::from("127.0.0.1:3500");
             },
             "teku" => v.eth2 = Eth2Client::TEKU,
-            "nimbus" => v.eth2 = Eth2Client::NIMBUS,
+            "nimbus" => {
+                v.eth2 = Eth2Client::NIMBUS;
+                v.eth2_http_addr = String::from("127.0.0.1:9091");
+            },
             _ => panic!("Please input a valid Eth2 client"),
         }
 
@@ -181,25 +185,25 @@ impl Valid8r {
 
         match self.eth2 {
             Eth2Client::LIGHTHOUSE => {
-                if let Err(_e) = eth2_check("LIGHTHOUSE") {
+                if let Err(_e) = eth2_check("LIGHTHOUSE", format!("http://{}", self.eth2_http_addr)) {
                     let msg = Rezzy{ message: format!("VALID8R could not connect to LIGHTHOUSE") };
                     msg.write_red();
                 }
             }
             Eth2Client::PRYSM => {
-                if let Err(_e) = eth2_check("PRYSM") {
+                if let Err(_e) = eth2_check("PRYSM", format!("http://{}", self.eth2_http_addr)) {
                     let msg = Rezzy{ message: format!("VALID8R ERROR could not connect to PRYSM") };
                     msg.write_red();
                 }
             },
             Eth2Client::NIMBUS => {
-                if let Err(_e) = eth2_check("NIMBUS") {
+                if let Err(_e) = eth2_check("NIMBUS", format!("http://{}", self.eth2_http_addr)) {
                     let msg = Rezzy{ message: format!("VALID8R ERROR could not connect to NIMBUS") };
                     msg.write_red();
                 }
             },
             Eth2Client::TEKU => {
-                if let Err(_e) = eth2_check("TEKU") {
+                if let Err(_e) = eth2_check("TEKU",format!("http://{}", self.eth2_http_addr)) {
                     let msg = Rezzy{ message: format!("VALID8R ERROR could not connect to TEKU") };
                     msg.write_red();
                 }
