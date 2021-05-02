@@ -8,9 +8,6 @@ static GETH_GIT: &str = "https://api.github.com/repos/ethereum/go-ethereum/relea
 static BESU_GIT: &str = "https://api.github.com/repos/hyperledger/besu/releases/latest";
 static NETHERMIND_GIT: &str = "https://api.github.com/repos/nethermindeth/nethermind/releases/latest";
 static OPENETHEREUM_GIT: &str = "https://api.github.com/repos/openethereum/openethereum/releases/latest";
-static INFURA: &str = "https://mainnet.infura.io/v3/65daaf22efb6473e8b56161095669ca8";
-
-static ETH1_CLIENT_ADDR: &str = "http://127.0.0.1:8545";
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RpcRequest {
@@ -53,7 +50,7 @@ pub fn eth_req(st: &str, url: &str) -> Result<reqwest::blocking::Response> {
     Ok(res)
 }
 
-fn infura_req(st: &str) -> Result<reqwest::blocking::Response> {
+fn infura_req(st: &str, url: &str) -> Result<reqwest::blocking::Response> {
     let req = RpcRequest {
         jsonrpc: String::from("2.0"),
         method: String::from(st),
@@ -71,7 +68,7 @@ fn infura_req(st: &str) -> Result<reqwest::blocking::Response> {
     };
 
     let client = reqwest::blocking::Client::new();
-    let res = client.post(INFURA)
+    let res = client.post(url)
         .header("Content-Type", "application/json")
         .body(serialized)
         .send()?;
@@ -104,11 +101,11 @@ fn git_req(repo: &str) -> Result<String> {
     Ok(String::from(x))
 }
 
-pub fn eth1_check(eth1: &str) -> Result<()> {
+pub fn eth1_check(eth1: &str, client_addr: String, infura_addr: &str, testnet: bool) -> Result<()> {
     let banner = Rezzy{ message: format!("\nETH1 Client Check: {}", eth1) };
     banner.bold();
 
-    let res4 = eth_req("web3_clientVersion", ETH1_CLIENT_ADDR)?;
+    let res4 = eth_req("web3_clientVersion", client_addr.as_str())?;
     let r4 = res4.status();
 
     match r4 {
@@ -149,7 +146,7 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
             msg.write_red();
         }
     }
-    let res3 = eth_req("net_version", ETH1_CLIENT_ADDR)?;
+    let res3 = eth_req("net_version", client_addr.as_str())?;
     let r3 = res3.status();
 
     match r3 {
@@ -157,8 +154,11 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
             let j: RpcResponse = res3.json()?;
             if let Some(re) = j.result { 
                 if let Some(st) = re.as_str() {
-                    if st.eq("1") {
+                    if st.eq("1") && !testnet {
                         let msg = Rezzy{ message: format!("{} is on mainnet", eth1)  };
+                        msg.write_green();
+                    } else if !st.eq("1") && testnet {
+                        let msg = Rezzy{ message: format!("{} is on testnet: {}", eth1, st)  };
                         msg.write_green();
                     } else {
                         let msg = Rezzy{ message: format!("{} is currently NOT on mainnet", eth1) };
@@ -172,7 +172,7 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
             msg.write_red();
         }
     }
-    match infura_req("eth_blockNumber") {
+    match infura_req("eth_blockNumber", infura_addr) {
         Ok(r) => {
             let inf: RpcResponse = r.json()?;
             if let Some(infr) = inf.result {
@@ -188,11 +188,11 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
         } 
     };
 
-    let res1 = eth_req("eth_blockNumber", ETH1_CLIENT_ADDR)?;
+    let res1 = eth_req("eth_blockNumber", client_addr.as_str())?;
     let ji: RpcResponse = res1.json()?;
 
 
-    let res5 = eth_req("eth_syncing", ETH1_CLIENT_ADDR)?;
+    let res5 = eth_req("eth_syncing", client_addr.as_str())?;
     let r5 = res5.status();
 
     match r5 {
@@ -230,7 +230,7 @@ pub fn eth1_check(eth1: &str) -> Result<()> {
             msg.write_red();
         }
     }
-    let res2 = eth_req("net_peerCount", ETH1_CLIENT_ADDR)?;
+    let res2 = eth_req("net_peerCount", client_addr.as_str())?;
     let r2 = res2.status();
 
     match r2 {
