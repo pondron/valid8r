@@ -274,7 +274,7 @@ impl Valid8r {
             },
             Err(e) => {
                 if e.kind() == ErrorKind::AddrInUse {
-                    let msg = Rezzy{ message: format!("{:?} security best practices recommend moving the standard ssh port", self.eth1) };
+                    let msg = Rezzy{ message: format!("{:?} security best practices recommend moving the standard ssh port", self.eth1.name) };
                     msg.write_red();
                 } else if e.kind()  == ErrorKind::PermissionDenied {
                     let msg = Rezzy{ message: format!("Could not access default ssh port 22(run as root)") };
@@ -379,13 +379,13 @@ impl Valid8r {
         }
         // check disk size requirements
         if largest_disk > 1000000000000 {
-            let msg = Rezzy{ message: format!("Disk size requirement reached: \n\t Preffered 1TB(min 300GB) => Have {:?} bytes", largest_disk) };
+            let msg = Rezzy{ message: format!("Disk size requirement reached: \n\t Preferred 1TB(min 300GB) => Have {:?} bytes", largest_disk) };
             msg.write_green();
         } else if largest_disk < 1000000000000 && largest_disk > 300000000000 {
-            let msg = Rezzy{ message: format!("Min Disk size requirement reached: \n\t Preffered 1TB(min 300GB) => Have {:?} bytes", largest_disk) };
+            let msg = Rezzy{ message: format!("Min Disk size requirement reached: \n\t Preferred 1TB(min 300GB) => Have {:?} bytes", largest_disk) };
             msg.write_yellow();
         } else {
-            let msg = Rezzy{ message: format!("Disk size requirement  NOTreached: \n\t Preffered 1TB(min 300GB) => Have {:?} bytes", largest_disk) };
+            let msg = Rezzy{ message: format!("Disk size requirement  NOTreached: \n\t Preferred 1TB(min 300GB) => Have {:?} bytes", largest_disk) };
             msg.write_red();
         }
     }    
