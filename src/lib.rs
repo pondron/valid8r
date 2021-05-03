@@ -379,13 +379,13 @@ impl Valid8r {
         }
         // check disk size requirements
         if largest_disk > 1000000000000 {
-            let msg = Rezzy{ message: format!("Disk size requirement reached: \n\t Preffered 1TB(min 300GB) => Have {:?} bytes", largest_disk) };
+            let msg = Rezzy{ message: format!("Disk size requirement reached: \n\t Preferred 1TB(min 300GB) => Have {:?} bytes", largest_disk) };
             msg.write_green();
         } else if largest_disk < 1000000000000 && largest_disk > 300000000000 {
-            let msg = Rezzy{ message: format!("Min Disk size requirement reached: \n\t Preffered 1TB(min 300GB) => Have {:?} bytes", largest_disk) };
+            let msg = Rezzy{ message: format!("Min Disk size requirement reached: \n\t Preferred 1TB(min 300GB) => Have {:?} bytes", largest_disk) };
             msg.write_yellow();
         } else {
-            let msg = Rezzy{ message: format!("Disk size requirement  NOTreached: \n\t Preffered 1TB(min 300GB) => Have {:?} bytes", largest_disk) };
+            let msg = Rezzy{ message: format!("Disk size requirement  NOTreached: \n\t Preferred 1TB(min 300GB) => Have {:?} bytes", largest_disk) };
             msg.write_red();
         }
     }    
