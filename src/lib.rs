@@ -1,11 +1,11 @@
 use sysinfo::{System, SystemExt, DiskExt};
 use std::net::TcpListener;
 use std::io::ErrorKind;
+use std::process;
 use std::error::{Error as Err};
 use structopt::StructOpt;
 use chrono::prelude::*;
 use output::Rezzy;
-use eth1::*;
 use eth2::*;
 
 mod output;
@@ -52,15 +52,6 @@ pub struct Config {
 }
 
 #[derive(Debug,PartialEq)]
-pub enum Eth1Client {
-    GETH,
-    BESU,
-    NETHERMIND,
-    OPENETHEREUM,
-    NONE,
-}
-
-#[derive(Debug,PartialEq)]
 pub enum Eth2Client {
     LIGHTHOUSE,
     PRYSM,
@@ -71,48 +62,52 @@ pub enum Eth2Client {
 
 #[derive(Debug,PartialEq)]
 pub struct Valid8r {
-    pub eth1: Eth1Client,
+    pub eth1: eth1::Eth1Client,
     pub eth1_listener_addr: String,
     pub eth1_http_addr: String,
     pub eth2: Eth2Client,
     pub eth2_listener_addr: String,
     pub eth2_http_addr: String,
     pub ntp_endpoint: String,
-    pub infura_endpoint: String,
-    pub testnet: bool,
 }
 
 impl Valid8r {
     pub fn new(cfg: Config) -> Valid8r {
         let mut v = Valid8r{
-            eth1: Eth1Client::NONE,
+            eth1: eth1::Eth1Client::new(
+                String::from("GETH"),
+                String::from("http://127.0.0.1:8545"),
+                String::from("https://mainnet.infura.io/v3/65daaf22efb6473e8b56161095669ca8"),
+                false)
+            ,
             eth1_listener_addr: String::from("0.0.0.0:30303"),
             eth1_http_addr: String::from("127.0.0.1:8545"),
             eth2: Eth2Client::NONE,
             eth2_listener_addr: String::from("0.0.0.0:9000"),
             eth2_http_addr: String::from("0.0.0.0:5052"),
             ntp_endpoint: String::from("0.pool.ntp.org:123"),
-            infura_endpoint: String::from("https://mainnet.infura.io/v3/65daaf22efb6473e8b56161095669ca8"),
-            testnet: false
         };
 
-        if let Some(infura) = cfg.infura_endpoint {
-            v.infura_endpoint = infura;
-        }
         if let Some(ntp) = cfg.ntp_endpoint {
             v.ntp_endpoint = ntp;
         }        
+        if let Some(infura) = cfg.infura_endpoint {
+            v.eth1.infura_addr = infura;
+        }
         if let Some(_) = cfg.testnet {
-            v.testnet = true;
+            v.eth1.testnet = true;
         }
 
         let e1: &str = &cfg.eth1.to_lowercase();
         match e1 {
-            "geth" => v.eth1 = Eth1Client::GETH,
-            "besu" => v.eth1 = Eth1Client::BESU,
-            "nethermind" => v.eth1 = Eth1Client::NETHERMIND,
-            "openethereum" => v.eth1 = Eth1Client::OPENETHEREUM,
-            _ => panic!("Please input a valid Eth1 client"),
+            "geth" => v.eth1.name = String::from("GETH"),
+            "besu" => v.eth1.name = String::from("BESU"),
+            "nethermind" => v.eth1.name = String::from("NETHERMIND"),
+            "openethereum" => v.eth1.name = String::from("OPENETHEREUM"),
+            _ => {
+                println!("ERROR: Please input a valid Eth1 client(entered {})", e1);
+                process::exit(1);
+            },
         }
 
         let e2: &str = &cfg.eth2.to_lowercase();
@@ -128,7 +123,10 @@ impl Valid8r {
                 v.eth2 = Eth2Client::NIMBUS;
                 v.eth2_http_addr = String::from("127.0.0.1:9091");
             },
-            _ => panic!("Please input a valid Eth2 client"),
+            _ => {
+                println!("ERROR: Please input a valid Eth2 client(entered {})", e1);
+                process::exit(1);
+            },
         }
 
         if let Some(port) = cfg.eth1_listener_port {
@@ -136,6 +134,7 @@ impl Valid8r {
         }
         if let Some(port) = cfg.eth1_http_port {
             v.eth1_http_addr = format!("127.0.0.1:{}", port);
+            v.eth1.http_addr = format!("http://127.0.0.1:{}", port);
         }
         if let Some(port) = cfg.eth2_listener_port {
             v.eth2_listener_addr = format!("0.0.0.0:{}", port);
@@ -155,32 +154,9 @@ impl Valid8r {
 
         self.net_req();
 
-        match self.eth1 {
-            Eth1Client::GETH => {
-                if let Err(_e) = eth1_check("GETH", format!("http://{}", self.eth1_http_addr), &self.infura_endpoint, self.testnet) {
-                    let msg = Rezzy{ message: format!("VALID8R could not connect to GETH") };
-                    msg.write_red();
-                }
-            }
-            Eth1Client::BESU => {
-                if let Err(_e) = eth1_check("BESU", format!("http://{}", self.eth1_http_addr), &self.infura_endpoint, self.testnet) {
-                    let msg = Rezzy{ message: format!("VALID8R ERROR could not connect to BESU") };
-                    msg.write_red();
-                }
-            },
-            Eth1Client::NETHERMIND => {
-                if let Err(_e) = eth1_check("NETHERMIND", format!("http://{}", self.eth1_http_addr), &self.infura_endpoint, self.testnet) {
-                    let msg = Rezzy{ message: format!("VALID8R ERROR could not connect to NETHERMIND") };
-                    msg.write_red();
-                }
-            },
-            Eth1Client::OPENETHEREUM => {
-                if let Err(_e) = eth1_check("OPENETHEREUM", format!("http://{}", self.eth1_http_addr), &self.infura_endpoint, self.testnet) {
-                    let msg = Rezzy{ message: format!("VALID8R ERROR could not connect to OPENETHEREUM") };
-                    msg.write_red();
-                }
-            },
-            _ => println!("can't happen")
+        if let Err(_e) = self.eth1.eth1_check() {
+            let msg = Rezzy{ message: format!("VALID8R could not connect to {} at addr {}", self.eth1.name, self.eth1.http_addr) };
+            msg.write_red();
         }
 
         match self.eth2 {
@@ -222,30 +198,30 @@ impl Valid8r {
             _ => {
                 match TcpListener::bind(&self.eth1_listener_addr) {
                     Ok(_) => {
-                        let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING ON PORT: 30303", self.eth1) };
+                        let msg = Rezzy{ message: format!("{} IS NOT LISTENING ON PORT: {}", self.eth1.name, self.eth1_listener_addr) };
                         msg.write_red();
                     },
                     Err(e) => {
                         if e.kind() == ErrorKind::AddrInUse {
-                            let msg = Rezzy{ message: format!("{:?} is listening on port: 30303", self.eth1) };
+                            let msg = Rezzy{ message: format!("{} is listening on port: {}", self.eth1.name, self.eth1_listener_addr) };
                             msg.write_green();
                         } else {
-                            let msg = Rezzy{ message: format!("{:?} misc error when listening on 30303", e) };
+                            let msg = Rezzy{ message: format!("{:?} misc error when listening on {}", e, self.eth1_listener_addr) };
                             msg.write_yellow();
                         }
                     }
                 }
                 match TcpListener::bind(&self.eth1_http_addr) {
                     Ok(_) => {
-                        let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING for JSON RPC on PORT: 8545", self.eth1) };
+                        let msg = Rezzy{ message: format!("{} IS NOT LISTENING for JSON RPC on PORT: {}", self.eth1.name, self.eth1_http_addr) };
                         msg.write_red();
                     },
                     Err(e) => {
                         if e.kind() == ErrorKind::AddrInUse {
-                            let msg = Rezzy{ message: format!("{:?} is listening on port: 8545", self.eth1) };
+                            let msg = Rezzy{ message: format!("{} is listening on port: {}", self.eth1.name, self.eth1_http_addr) };
                             msg.write_green();
                         } else {
-                            let msg = Rezzy{ message: format!("{:?} misc error when listening on 8545", e) };
+                            let msg = Rezzy{ message: format!("{:?} misc error when listening on {}", e, self.eth1_http_addr) };
                             msg.write_yellow();
                         }
                     }
@@ -433,7 +409,7 @@ mod tests {
             infura_endpoint: Some(String::from("0.0.0.0")),
         };
         let val = Valid8r::new(cfg);
-        assert_eq!(val.eth1, Eth1Client::GETH);
+        assert_eq!(val.eth1, String::from("GETH"));
         assert_eq!(val.eth2, Eth2Client::LIGHTHOUSE);
     }
 }
