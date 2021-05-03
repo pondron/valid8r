@@ -10,10 +10,6 @@ static PRYSM_GIT: &str = "https://api.github.com/repos/prysmaticlabs/prysm/relea
 static NIMBUS_GIT: &str = "https://api.github.com/repos/status-im/nimbus-eth2/releases/latest";
 static TEKU_GIT: &str = "https://api.github.com/repos/ConsenSys/teku/releases/latest";
 
-static ETH2_CLIENT_ADDR: &str = "http://127.0.0.1:5052";
-static ETH2_CLIENT_ADDR_PRYSM: &str = "http://127.0.0.1:3500";
-static ETH2_CLIENT_ADDR_NIMBUS: &str = "http://127.0.0.1:9091";
-
 #[derive(Serialize, Deserialize, Debug)]
 struct Eth2Response {
     data: Option<serde_json::Value>,
@@ -115,21 +111,16 @@ fn parse_ver(pay: &Eth2Response) -> Result<String> {
     Ok(String::from(x))
 }
 
-pub fn eth2_check(eth2: &str) -> Result<()> {
+pub fn eth2_check(eth2: &str, client_addr: String) -> Result<()> {
     let banner = Rezzy{ message: format!("\nETH2 Client Check: {}", eth2) };
     banner.bold();
 
 
-    let base_path = match eth2 {
-        "PRYSM" => ETH2_CLIENT_ADDR_PRYSM,
-        "NIMBUS" => ETH2_CLIENT_ADDR_NIMBUS,
-        _ => ETH2_CLIENT_ADDR,
-    };
-
+    let base_path = client_addr.as_str();
 
     match eth2 {
         "NIMBUS" => {
-            let res4 = eth_req("getNodeVersion", ETH2_CLIENT_ADDR_NIMBUS)?;
+            let res4 = eth_req("getNodeVersion", client_addr.as_str())?;
             let r4 = res4.status();
         
             match r4 {
@@ -165,7 +156,7 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
                 }
             }
 
-            let res5 = eth_req("getSyncing", ETH2_CLIENT_ADDR_NIMBUS)?;
+            let res5 = eth_req("getSyncing", client_addr.as_str())?;
             let r5 = res5.status();
         
             match r5 {
@@ -195,7 +186,7 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
                 }
             }
 
-            let res2 = eth_req("get_v1_node_peer_count", ETH2_CLIENT_ADDR_NIMBUS)?;
+            let res2 = eth_req("get_v1_node_peer_count", client_addr.as_str())?;
             let r2 = res2.status();
         
             match r2 {
@@ -228,10 +219,10 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
             }
         }
         "PRYSM" => {
-            fn eth2_prysm_sync_check() -> Result<bool> {
+            fn eth2_prysm_sync_check(prysm_addr: &str) -> Result<bool> {
 
                 let client = reqwest::blocking::Client::new();
-                let res = client.get("http://127.0.0.1:3500/eth/v1alpha1/node/syncing")
+                let res = client.get(prysm_addr)
                     .header("User-Agent", "request")
                     .send()?
                     .text()?;
@@ -311,7 +302,7 @@ pub fn eth2_check(eth2: &str) -> Result<()> {
                 }
             }
 
-            match eth2_prysm_sync_check() {
+            match eth2_prysm_sync_check(format!("{}/eth/v1alpha1/node/syncing", base_path).as_str()) {
                 Ok(r) => {
                     if !r {
                         let msg = Rezzy{ message: format!("{} is currently synced!", eth2) };
