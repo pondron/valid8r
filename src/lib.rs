@@ -232,15 +232,15 @@ impl Valid8r {
             Eth2Client::LIGHTHOUSE | Eth2Client::NIMBUS | Eth2Client::TEKU => {
                 match TcpListener::bind(&self.eth2_listener_addr) {
                     Ok(_) => {
-                        let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING ON PORT: 9000", self.eth2) };
+                        let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING ON PORT: {}", self.eth2, self.eth2_listener_addr) };
                         msg.write_red();
                     },
                     Err(e) => {
                         if e.kind() == ErrorKind::AddrInUse {
-                            let msg = Rezzy{ message: format!("{:?} is listening on port: 9000", self.eth2) };
+                            let msg = Rezzy{ message: format!("{:?} is listening on port: {}", self.eth2, self.eth2_listener_addr) };
                             msg.write_green();
                         } else {
-                            let msg = Rezzy{ message: format!("{:?} misc error when listening on 9000", e) };
+                            let msg = Rezzy{ message: format!("{:?} misc error when listening on {}", e, self.eth2_listener_addr) };
                             msg.write_yellow();
                         }
                     }
@@ -249,15 +249,15 @@ impl Valid8r {
             Eth2Client::PRYSM => {
                 match TcpListener::bind(&self.eth2_listener_addr) {
                     Ok(_) => {
-                        let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING ON PORT: 4000", self.eth2) };
+                        let msg = Rezzy{ message: format!("{:?} IS NOT LISTENING ON PORT: {}", self.eth2, self.eth2_listener_addr) };
                         msg.write_red();
                     },
                     Err(e) => {
                         if e.kind() == ErrorKind::AddrInUse {
-                            let msg = Rezzy{ message: format!("{:?} is listening on port: 4000", self.eth2) };
+                            let msg = Rezzy{ message: format!("{:?} is listening on port: {}", self.eth2, self.eth2_listener_addr) };
                             msg.write_green();
                         } else {
-                            let msg = Rezzy{ message: format!("{:?} misc error when listening on 4000", e) };
+                            let msg = Rezzy{ message: format!("{:?} misc error when listening on {}", e, self.eth2_listener_addr) };
                             msg.write_yellow();
                         }
                     }
